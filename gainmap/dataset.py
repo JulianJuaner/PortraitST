@@ -13,14 +13,17 @@ IMG_EXTENSIONS = [
     '.png', '.PNG', '.bmp', '.BMP',
 ]
 
+# normalization step before puts in VGG.
 def make_trans():
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
     return normalize
 
+# test file by extension
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
+# find all image files and store paths as a list.
 def make_dataset(dir):
     images = []
     print(dir)
@@ -34,12 +37,16 @@ def make_dataset(dir):
     images.sort()
     return images
 
+# open and get a image tensor.
 def getImage(filename):
     src = cv2.imread(filename,1)
     img = src.transpose(2,0,1).astype(np.float32)
     img = Variable(torch.from_numpy(img), requires_grad=False)
     return img
 
+# The Style-Transfer Dataset.
+# mode = Paired: ONE style example with ONE paired inputs;
+#        Others: ONE style example with MULTIPLE inputs;
 class ST_dataset(data.Dataset):
     def __init__(self, root, name='testing', mode='paired'):
         self.file_list = file_list
