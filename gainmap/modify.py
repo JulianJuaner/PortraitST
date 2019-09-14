@@ -46,11 +46,9 @@ class OverAllLoss():
 def StyleTransfer(opt):
     conv3_model = myVGG(layer='conv3_1')
     conv4_model = myVGG(layer='conv4_1')
-    
+
     dataloader = DataLoader(
-            ImageDataset("../../data/%s" % opt.dataset_name, \
-            "../../data/%s" % opt.dataset_name, \
-            channel = opt.channels, datasize = opt.datasize, transforms_=None, unaligned=False, mask=True, opt = opt),
+            ST_dataset(root=opt.root),
             batch_size=opt.batch_size, 
             shuffle=True,
             num_workers=0,
