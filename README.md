@@ -5,3 +5,7 @@ Reference paper reading, two parts initially: image alignment and feature gain m
 TODOLIST: 
 1. Dlib landmark model -> 68 facial landmarks -> test performance of **image morphing.**
 2. VGG feature extraction (conv3, conv4, conv5). Visualization of feature, gain map implementation.
+### 20190914-15
+1. Dlib feature extraction implementation (68 facial landmarks). 
+2. The gain map implementation and stageA transfer process. 
+3. Still confusing about the transpose part and weight balance between two loss terms. Needs DEBUG in ./gainmap/modify.py. The layers used for feature extraction needs furthur confirmation.
