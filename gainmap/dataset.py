@@ -67,8 +67,7 @@ class ST_dataset(data.Dataset):
         src = cv2.imread(filename)
         src = cv2.resize(src, (500, 500))
         img = src.astype(np.float32)
-        #tensor = torch.from_numpy(img)
-
+        #tensor = torch.from_numpy(img.transpose(2,0,1))
         tensor = self.trans(img)
         if 'input' in mode:
             img = Variable(tensor, requires_grad=True)#, device='cuda')
