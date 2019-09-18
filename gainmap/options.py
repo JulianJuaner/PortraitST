@@ -16,6 +16,7 @@ class FeatureOptions():
         parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
         parser.add_argument('--lr', type=float, default=1, help='learning rate')
         parser.add_argument('--iter_show', type=int, default=10, help='iters to show the midate results')
+        parser.add_argument('--layers', type=str, default='conv1_1,conv2_1,conv3_1,conv4_1,conv5_1')
 
         # Weight parameters
         parser.add_argument('--alpha_3', type=float, default=0.5, help='layer preference of conv3 first term')

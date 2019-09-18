@@ -50,7 +50,8 @@ class OverAllLoss():
             alpha = self.alpha_4
             beta = self.beta_4
         else:
-            print('no correct mode.')
+            alpha = 1.0
+            beta = 1.0
 
         Gain_loss = alpha * self.L2(Input, Map) / 2
         Style_loss = self.gT * beta /(2*math.pow(Style.shape[1], 2))\
@@ -64,8 +65,8 @@ class OverAllLoss():
 
 def StyleTransfer(opt):
     print('loading VGG models......')
-    conv3_model = myVGG(layer='conv3_1').cuda()
-    conv4_model = myVGG(layer='conv4_1').cuda()
+    model = myVGG(layers=opt.layers.split(',')).cuda()
+    
     totalLoss = OverAllLoss(opt)
 
     os.makedirs("./log/%s/"%opt.name, exist_ok=True)
@@ -82,19 +83,19 @@ def StyleTransfer(opt):
 
     print('start processing.')
     for _, data in enumerate(dataloader):
-        style_feat_3 = conv3_model(data[0].cuda())
-        style_feat_4 = conv4_model(style_feat_3)
-        input_feat_3 = conv3_model(data[1].cuda())
-        input_feat_4 = conv4_model(input_feat_3)
+        style_feats = model(data[0].cuda())
+        input_feats = model(data[1].cuda())
 
-        Map_3 = ModifyMap(style_feat_3, input_feat_3, opt)
-        Map_4 = ModifyMap(style_feat_4, input_feat_4, opt)
+        Maps = []
+        for i in len(model.layers):
+            Maps += [ModifyMap(style_feats[i], input_feats[i], opt)]
+
         
-        temp_image = make_grid((Map_4[:,:3,:,:]-opt.gmin)/(opt.gmax-opt.gmin), nrow=opt.batch_size, padding=0, normalize=False)
+        temp_image = make_grid((Maps[1][:,:3,:,:]-opt.gmin)/(opt.gmax-opt.gmin), nrow=opt.batch_size, padding=0, normalize=False)
         train_writer.add_image('Gain Map', temp_image, 0)
-        temp_image = make_grid(style_feat_4[:,:3,:,:], nrow=opt.batch_size, padding=0, normalize=False)
+        temp_image = make_grid(style_feats[1][:,:3,:,:], nrow=opt.batch_size, padding=0, normalize=False)
         train_writer.add_image('style_feat_4', temp_image, 0)
-        temp_image = make_grid(input_feat_4[:,:3,:,:], nrow=opt.batch_size, padding=0, normalize=False)
+        temp_image = make_grid(input_feats[1][:,:3,:,:], nrow=opt.batch_size, padding=0, normalize=False)
         train_writer.add_image('input_feat_4', temp_image, 0)
 
         # Initialize the output.
@@ -110,11 +111,21 @@ def StyleTransfer(opt):
         pbar = tqdm(total=opt.iter)
 
         for iters in range(opt.iter+1):
-            loss_3_gain, loss_3_style = totalLoss.forward(style_feat_3, input_feat_3,
-                                                Map=Map_3, mode='conv3_1')
-            loss_4_gain, loss_4_style = totalLoss.forward(style_feat_4, input_feat_4,
-                                                Map=Map_4, mode='conv4_1')
-            Loss = loss_3_gain + loss_3_style + loss_4_gain + loss_4_style
+
+            for i in len(model.layers):
+                if 'conv3_1' in model.layers[i]:
+                    loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
+                                                                        Map=Maps[i], mode='conv3_1')
+                elif 'conv4_1' in model.layers[i]:
+                    loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
+                                                                        Map=Maps[i], mode='conv4_1')
+                else:
+                    loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
+                                                                        Map=Maps[i])
+                Loss_gain += loss_gain_item
+                Loss_style += loss_style_item
+            
+            Loss = Loss_gain + Loss_style
             
             if iters%opt.iter_show == 0:
                 # record result pics.
@@ -124,17 +135,14 @@ def StyleTransfer(opt):
             if iters%10 == 0:
                 # record loss items variation
                 train_writer.add_scalar("total_loss", Loss.item(), iters+images*opt.iter)
-                train_writer.add_scalar("loss_3_gain", loss_3_gain.item(), iters+images*opt.iter)
-                train_writer.add_scalar("loss_4_gain", loss_4_gain.item(), iters+images*opt.iter)
-                train_writer.add_scalar("loss_3_style", loss_3_style.item(), iters+images*opt.iter)
-                train_writer.add_scalar("loss_4_style", loss_4_style.item(), iters+images*opt.iter)
+                train_writer.add_scalar("loss_gain", Loss_gain.item(), iters+images*opt.iter)
+                train_writer.add_scalar("loss_style", Loss_style.item(), iters+images*opt.iter)
 
             # Updates.
             Loss.backward(retain_graph=True)
             optimizer.step()
             optimizer.zero_grad()
-            input_feat_3 = conv3_model(output)
-            input_feat_4 = conv4_model(input_feat_3)
+            input_feats = model(output)
             pbar.update(1)
 
         pbar.close()
