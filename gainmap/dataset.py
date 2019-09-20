@@ -64,8 +64,8 @@ class ST_dataset(data.Dataset):
 
     # open and get a image tensor.
     def get_image(self, filename, mode='input'):
-        src = cv2.imread(filename)
-        src = cv2.resize(src, (500, 500))
+        src = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
+        src = cv2.resize(src, (500, 660))
         img = src.astype(np.float32)
         #tensor = torch.from_numpy(img.transpose(2,0,1))
         tensor = self.trans(img)

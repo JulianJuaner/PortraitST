@@ -22,5 +22,8 @@ Delaunay trianglation (index vs coordinates) -> further working.
 Morphing COMPLETED.\
 Multilayer feature extraction implementation, not tested yet.
 
+### 20190920
+Loss implementaion completed. Future work: back-propagation effectiveness, detail preserving and new style testing.
+
 
 

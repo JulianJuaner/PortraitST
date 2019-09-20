@@ -16,7 +16,7 @@ class myVGG(nn.Module):
         super(myVGG, self).__init__()
         self.original_model = models.vgg19(pretrained=False)
         self.original_model.load_state_dict(torch.load('../weights/vgg19-dcbb9e9d.pth'))
-        #original_model.load_state_dict(torch.load('../weights/vgg19_bn-c79401a0.pth'))
+        #self.original_model.load_state_dict(torch.load('../weights/vgg19_bn-c79401a0.pth'))
         #if vgg_bn: 17, 17-30; vgg: 12, 12-21
         self.layers = layers
         self.checkpoints = [2, 5, 7, 10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32, 34, 37]
@@ -45,7 +45,11 @@ class myVGG(nn.Module):
             start = checkpoint
 
     def forward(self, x):
-        return [f(x) for f in self.features]
+        result = []
+        for f in self.features:
+            x = f(x)
+            result += [x]
+        return result
 
 if __name__ == '__main__':
     myVGG()

@@ -15,15 +15,15 @@ from torchvision.utils import make_grid
 
 def ModifyMap(Style, Input, opt):
     Gain = torch.div(Style, Input+1e-4)
+    Gain = torch.clamp(Gain, min=opt.gmin, max=opt.gmax)
     Modified = Input*Gain
-    Modified = torch.clamp(Modified, min=opt.gmin, max=opt.gmax)
     return Modified
 
 class OverAllLoss():
     def __init__(self, opt):
         self.L1 = torch.nn.L1Loss().cuda()
-        self.L2 = torch.nn.MSELoss().cuda()
-        self.compare = torch.nn.MSELoss(reduction='sum').cuda()
+        self.L2 = torch.nn.MSELoss(reduction='sum').cuda()
+        self.compare = torch.nn.MSELoss().cuda()
 
         #set parameters
         self.alpha_3 = opt.alpha_3
@@ -35,13 +35,27 @@ class OverAllLoss():
         self.gmax = opt.gmax
         self.sigma = 1e-4
         
+    def transposed_mul(self, Input, Style):
+        output = 0
 
-    def forward(self, Style, Input, Map='none', mode='conv3_1'):
+        Input = Input.reshape(Input.shape[1], -1)
+        Style = Style.reshape(Style.shape[1], -1)
+
+        mul_input = torch.mm(Input, Input.transpose(1, 0))
+        mul_style = torch.mm(Style, Style.transpose(1, 0))
+
+        output = self.L2(mul_input, mul_style)
+
+        return output
+
+
+    def forward(self, Style, Input, Map=None, mode='convN'):
         # A, B: 4-D tensors.
-        if Map is not None:
+        if Map is None:
+            print('new map needed.')
             Gain = torch.div(Style, Input+self.sigma)
+            Gain = torch.clamp(Gain, min=self.gmin, max=self.gmax)
             Map = torch.mul(Input, Gain)
-            Map = torch.clamp(Map, min=self.gmin, max=self.gmax)
 
         if 'conv3' in mode:
             alpha = self.alpha_3
@@ -53,9 +67,10 @@ class OverAllLoss():
             alpha = 1.0
             beta = 1.0
 
-        Gain_loss = alpha * self.L2(Input, Map) / 2
-        Style_loss = self.gT * beta /(2*math.pow(Style.shape[1], 2))\
-                    * self.compare(Input, Style)
+        Gain_loss = alpha * self.L2(Input, Map) / 2*Style.shape[1]*Style.shape[2]*Style.shape[3]
+
+        Style_loss = self.gT * beta /(4*math.pow(Style.shape[1], 2))\
+                    * self.transposed_mul(Input, Style)
 
                 #****The point that confuced me****#
                 #* self.compare(torch.mul(Input, Input.transpose(2,3)),
@@ -69,9 +84,9 @@ def StyleTransfer(opt):
     
     totalLoss = OverAllLoss(opt)
 
-    os.makedirs("./log/%s/"%opt.name, exist_ok=True)
-    os.makedirs("./checkpoints/%s/"%opt.name, exist_ok=True)
-    train_writer = tensorboardX.SummaryWriter("./log/%s/"%opt.name)
+    os.makedirs("./log/%s/"%opt.outf, exist_ok=True)
+    os.makedirs("./checkpoints/%s/"%opt.outf, exist_ok=True)
+    train_writer = tensorboardX.SummaryWriter("./log/%s/"%opt.outf)
 
     dataloader = DataLoader(
             ST_dataset(root=opt.root, name=opt.name, mode='unpaired'),
@@ -85,17 +100,19 @@ def StyleTransfer(opt):
     for _, data in enumerate(dataloader):
         style_feats = model(data[0].cuda())
         input_feats = model(data[1].cuda())
-
-        Maps = []
-        for i in len(model.layers):
-            Maps += [ModifyMap(style_feats[i], input_feats[i], opt)]
-
         
-        temp_image = make_grid((Maps[1][:,:3,:,:]-opt.gmin)/(opt.gmax-opt.gmin), nrow=opt.batch_size, padding=0, normalize=False)
+        Maps = []
+        for i in range(len(model.layers)):
+            Maps += [ModifyMap(style_feats[i], input_feats[i], opt)]
+        
+        index = 0
+        view_shape = (4, int(Maps[index].shape[1]/4), Maps[index].shape[2],  Maps[index].shape[3])
+        print(view_shape)
+        temp_image = make_grid(Maps[index].reshape(view_shape)[:,:3,:,:], nrow=4, padding=0, normalize=True)
         train_writer.add_image('Gain Map', temp_image, 0)
-        temp_image = make_grid(style_feats[1][:,:3,:,:], nrow=opt.batch_size, padding=0, normalize=False)
+        temp_image = make_grid(style_feats[index].reshape(view_shape)[:,:3,:,:], nrow=4, padding=0, normalize=True)
         train_writer.add_image('style_feat_4', temp_image, 0)
-        temp_image = make_grid(input_feats[1][:,:3,:,:], nrow=opt.batch_size, padding=0, normalize=False)
+        temp_image = make_grid(input_feats[index].reshape(view_shape)[:,:3,:,:], nrow=4, padding=0, normalize=True)
         train_writer.add_image('input_feat_4', temp_image, 0)
 
         # Initialize the output.
@@ -112,7 +129,14 @@ def StyleTransfer(opt):
 
         for iters in range(opt.iter+1):
 
-            for i in len(model.layers):
+            Loss_gain = 0
+            Loss_style = 0
+            '''
+            Maps = []
+            for i in range(len(model.layers)):
+                Maps += [ModifyMap(style_feats[i], input_feats[i], opt)]
+            '''
+            for i in range(len(model.layers)):
                 if 'conv3_1' in model.layers[i]:
                     loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
                                                                         Map=Maps[i], mode='conv3_1')
