@@ -25,5 +25,9 @@ Multilayer feature extraction implementation, not tested yet.
 ### 20190920
 Loss implementaion completed. Future work: back-propagation effectiveness, detail preserving and new style testing.
 
+### 20190226
+All layer testing (stated in the paper presentation). No satisfying improvements, time increased.\
+More samples needed... PLEASE!s
+
 
 

@@ -25,7 +25,7 @@ class OverAllLoss():
         self.L2 = torch.nn.MSELoss(reduction='sum').cuda()
         self.compare = torch.nn.MSELoss().cuda()
 
-        #set parameters
+        # set parameters
         self.alpha_3 = opt.alpha_3
         self.alpha_4 = opt.alpha_4
         self.beta_3 = opt.beta_3
@@ -34,7 +34,8 @@ class OverAllLoss():
         self.gmin = opt.gmin
         self.gmax = opt.gmax
         self.sigma = 1e-4
-        
+
+    # get the style representation.
     def transposed_mul(self, Input, Style):
         output = 0
 
@@ -57,10 +58,10 @@ class OverAllLoss():
             Gain = torch.clamp(Gain, min=self.gmin, max=self.gmax)
             Map = torch.mul(Input, Gain)
 
-        if 'conv3' in mode:
+        if 'conv3_1' in mode:
             alpha = self.alpha_3
             beta = self.beta_3
-        elif 'conv4' in mode:
+        elif 'conv4_1' in mode:
             alpha = self.alpha_4
             beta = self.beta_4
         else:
@@ -71,10 +72,6 @@ class OverAllLoss():
 
         Style_loss = self.gT * beta /(4*math.pow(Style.shape[1], 2))\
                     * self.transposed_mul(Input, Style)
-
-                #****The point that confuced me****#
-                #* self.compare(torch.mul(Input, Input.transpose(2,3)),
-                #               torch.mul(Style, Style.transpose(2,3)))
         
         return Gain_loss, Style_loss
 
@@ -131,11 +128,7 @@ def StyleTransfer(opt):
 
             Loss_gain = 0
             Loss_style = 0
-            '''
-            Maps = []
-            for i in range(len(model.layers)):
-                Maps += [ModifyMap(style_feats[i], input_feats[i], opt)]
-            '''
+
             for i in range(len(model.layers)):
                 if 'conv3_1' in model.layers[i]:
                     loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
