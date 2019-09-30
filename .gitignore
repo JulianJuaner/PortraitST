@@ -1,0 +1,8 @@
+*.pth
+*.png
+*.jpg
+*.jpeg
+*.out*
+*.pyc
+*.dat
+
