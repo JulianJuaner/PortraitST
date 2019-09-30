@@ -38,8 +38,9 @@ class doubleConv(torch.nn.Module):
 class FeatureRC(nn.Module):
     def __init__(self, opt, requires_grad=True):
         super(FeatureRC, self).__init__()
-        self.FeatureGenerator = myVGG(layers=opt.layers)
+        self.VGG = myVGG(layers=opt.layers)
         self.pool = nn.MaxPool2d(2, stride=2)
+        self.loss = OverAllLoss(opt)
 
         self.upscale_1 = nn.ConvTranspose2d(512, 512, 4, 2, 1)
         self.upscale_2 = nn.ConvTranspose2d(512, 256, 4, 2, 1)
@@ -52,7 +53,28 @@ class FeatureRC(nn.Module):
         self.conv4 = doubleConv(128, 64)
         self.net_output = nn.Conv2d(64, 3, 1, 1, 0)
 
-    def forward(self, input, style):
+    def forward(self, face, style, opt):
         res = 0
+        face_feat = self.VGG(face)
+        style_feat = self.VGG(style)
+
+        Maps = []
+        for i in range(len(self.VGG.layers)):
+            Maps += [ModifyMap(style_feat[i], face_feat[i], opt)]
+            
+            if 'conv3_1' in self.VGG.layers[i]:
+                loss_gain_item, loss_style_item = self.loss.forward(style_feat[i], face_feat[i],
+                                                                    Map=Maps[i], mode='conv3_1')
+            elif 'conv4_1' in self.VGG.layers[i]:
+                loss_gain_item, loss_style_item = self.loss.forward(style_feat[i], face_feat[i],
+                                                                    Map=Maps[i], mode='conv4_1')
+            else:
+                loss_gain_item, loss_style_item = self.loss.forward(style_feat[i], face_feat[i],
+                                                                    Map=Maps[i])
+            Loss_gain += loss_gain_item
+            Loss_style += loss_style_item
+        
+        Loss = Loss_gain + Loss_style
+
         
         return res
