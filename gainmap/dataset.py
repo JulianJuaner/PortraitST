@@ -54,13 +54,13 @@ class ST_dataset(data.Dataset):
     def __getitem__(self, index):
         if self.mode == 'paired':
             return [self.get_image(self.feat[index%len(self)], mode='style'),
-             self.get_image(self.input[index%len(self)], mode='input')]
+             self.get_image(self.input[index%1], mode='input')]
         else:
             return [self.get_image(self.feat[0], mode='style'),
              self.get_image(self.input[index%len(self)], mode='input')]
 
     def __len__(self):
-        return len(self.input)
+        return len(self.feat)
 
     # open and get a image tensor.
     def get_image(self, filename, mode='input'):

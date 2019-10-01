@@ -2,6 +2,7 @@ import os
 import time
 import sys
 import torch
+import cv2
 import math
 import argparse
 import tensorboardX
@@ -11,7 +12,7 @@ from VGG import myVGG
 from dataset import ST_dataset
 from options import FeatureOptions
 from torch.utils.data import DataLoader
-from torchvision.utils import make_grid
+from torchvision.utils import make_grid, save_image
 
 def ModifyMap(Style, Input, opt):
     Gain = torch.div(Style, Input+1e-4)
@@ -86,7 +87,7 @@ def StyleTransfer(opt):
     train_writer = tensorboardX.SummaryWriter("./log/%s/"%opt.outf)
 
     dataloader = DataLoader(
-            ST_dataset(root=opt.root, name=opt.name, mode='unpaired'),
+            ST_dataset(root=opt.root, name=opt.name, mode='paired'),
             batch_size=opt.batch_size, 
             shuffle=False,
             num_workers=0,
@@ -94,7 +95,7 @@ def StyleTransfer(opt):
     images = -1
 
     print('start processing.')
-    for _, data in enumerate(dataloader):
+    for k, data in enumerate(dataloader):
         style_feats = model(data[0].cuda())
         input_feats = model(data[1].cuda())
         
@@ -148,6 +149,11 @@ def StyleTransfer(opt):
                 # record result pics.
                 temp_image = make_grid(output, nrow=opt.batch_size, padding=0, normalize=True)
                 train_writer.add_image('temp result', temp_image, iters+images*opt.iter)
+
+                if iters%(opt.iter_show*30) == 0:
+                    save_image(temp_image, "./checkpoints/%s/%d%d.png"%(opt.outf, k, iters))
+                    
+                
                 
             if iters%10 == 0:
                 # record loss items variation
