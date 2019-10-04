@@ -5,4 +5,7 @@
 *.out*
 *.pyc
 *.dat
+*.zip
+*.csv
+
 

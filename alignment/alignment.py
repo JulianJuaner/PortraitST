@@ -8,30 +8,39 @@ import delaunay
 import morph
 import time
 
-def crop_image(image_original, face_detector):
-    image = image_original.copy()
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # detect face
-    rects = face_detector(gray, 1)
-    # print('y1,y2,x1,x2:{} {} {} {}'.format(rects[0].top(), rects[0].bottom(), rects[0].left(), rects[0].right()))
-    targetY1 = int(rects[0].top()-0.5*(rects[0].bottom()-rects[0].top()))
-    targetY2 = int(rects[0].bottom()+0.3*(rects[0].bottom()-rects[0].top()))
-    targetX1 = int(rects[0].left()-0.25*(rects[0].right()-rects[0].left()))
-    targetX2 = int(rects[0].right()+0.25*(rects[0].right()-rects[0].left()))
+def crop_image(imageI_original, imageE_original, face_detector, landmarkI, landmarkE):
+    imageI = imageI_original.copy()
+    imageE = imageE_original.copy()
+
+    hI, wI = imageI.shape[0], imageI.shape[1]
+    hE, wE = imageE.shape[0], imageE.shape[1]
+
+    xminI, yminI = landmarkI[0:81].min(axis=0)
+    xmaxI, ymaxI = landmarkI[0:81].max(axis=0)
+
+    xminE, yminE = landmarkE[0:81].min(axis=0)
+    xmaxE, ymaxE = landmarkE[0:81].max(axis=0)
+    print(landmarkI, landmarkE)
+    print('rawI: {}'.format([yminI, ymaxI, xminI, xmaxI]))
+    print('rawE: {}'.format([yminE, ymaxE, xminE, xmaxE]))
+    targetY1 = int(yminE-yminI)
+    targetY2 = int(hI-ymaxI+ymaxE)
+    targetX1 = int(xminE-xminI)
+    targetX2 = int(wI-xmaxI+xmaxE)
+    print('before crop: {}'.format([targetY1, targetY2, targetX1, targetX2]))
     if targetY1<0:
         targetY1=0
-    if targetY2>gray.shape[0]:
-        targetY2=gray.shape[0]
+    if targetY2>hE:
+        targetY2=hE
     if targetX1<0:
         targetX1=0
-    if targetX2>gray.shape[1]:
-        targetX2=gray.shape[1]
-    # cropped_image = gray[targetY1:targetY2, targetX1:targetX2]
-    # cv2.imwrite("./tmp/cropped.png", cropped_image)
+    if targetX2>wE:
+        targetX2=wE
+    print('crop: {}'.format([targetY1, targetY2, targetX1, targetX2]))
     return [targetY1, targetY2, targetX1, targetX2]
 
 # funtion for preprocessing image and detect face&landmarks
-def face_and_landmark_detect(image_original, face_detector, landmark_predictor, name):
+def face_and_landmark_detect(image_original, face_detector, landmark_predictor_68, landmark_predictor_81, name):
     image = image_original.copy()
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -42,13 +51,16 @@ def face_and_landmark_detect(image_original, face_detector, landmark_predictor, 
     if len(rects) == 0:
         print(name+' No face')
     else:
-        landmarks = np.array([[p.x, p.y] for p in landmark_predictor(gray, rects[0]).parts()])
+        landmarks_68 = np.array([[p.x, p.y] for p in landmark_predictor_68(gray, rects[0]).parts()])
+        landmarks_81 = np.array([[p.x, p.y] for p in landmark_predictor_81(gray, rects[0]).parts()])
+        landmarks = np.r_[landmarks_68, landmarks_81[68:81]]
         # print("landmarks are: {}\n".format(landmarks))
-        for idx, point in enumerate(landmarks):
-            pos = (point[0], point[1])
-
+        # for idx, point in enumerate(landmarks):
+        #     pos = (point[0], point[1])
+        #     cv2.circle(image, pos, 2, color=(139, 0, 0))
+        #     cv2.putText(image, str(idx + 1), pos, cv2.FONT_HERSHEY_SIMPLEX, 0.2, (187, 255, 255), 1, cv2.LINE_AA)
     # draw landmarks and index
-    # cv2.imwrite("./tmp/tmp.png", image)
+    # cv2.imwrite("./tmp/landmark_"+name+".png", image)
 
     # -------------------------------------------------------------------------------------
     # delaunay trianglations
@@ -101,26 +113,34 @@ def load_image_and_morph(args):
     t1 = time.time()
     # initialize dlib's face detector and use facial landmark predictor
     face_detector = dlib.get_frontal_face_detector()
-    landmark_predictor = dlib.shape_predictor('../weights/shape_predictor_68_face_landmarks.dat')
+    landmark_predictor_68 = dlib.shape_predictor('../weights/shape_predictor_68_face_landmarks.dat')
+    landmark_predictor_81 = dlib.shape_predictor('../weights/shape_predictor_81_face_landmarks.dat')
     t2 = time.time()
     # load the image
 
     imageI = cv2.imread(args.input_image)
     imageE = cv2.imread(args.example_image)
-    # targetI = crop_image(imageI, face_detector)
-    # targetE = crop_image(imageE, face_detector)
-    # imageI = imageI[targetI[0]:targetI[1], targetI[2]:targetI[3]]
-    # imageE = imageE[targetE[0]:targetE[1], targetE[2]:targetE[3]]
 
-    imageI = cv2.resize(imageI, (500, 650))
-    imageE = cv2.resize(imageE, (500, 650))
-    # cv2.imwrite('./tmp/resizedI.png', imageI)
-    # cv2.imwrite('./tmp/resizedE.png', imageE)
     input_images_number, example_images_number = 1,1
 
     t3 = time.time()
-    pointsI = face_and_landmark_detect(imageI, face_detector, landmark_predictor, args.input_image.split('/')[-1])
-    pointsE = face_and_landmark_detect(imageE, face_detector, landmark_predictor, args.example_image.split('/')[-1])
+    imageI = cv2.resize(imageI, (500, 650))
+    imageE = cv2.resize(imageE, (500, 650))
+    pointsI = face_and_landmark_detect(imageI, face_detector, landmark_predictor_68, landmark_predictor_81, args.input_image.split('/')[-1])
+    pointsE = face_and_landmark_detect(imageE, face_detector, landmark_predictor_68, landmark_predictor_81, args.example_image.split('/')[-1])
+
+    # targetI = crop_image(imageI, face_detector, pointsI)
+    targetE = crop_image(imageI, imageE, face_detector, pointsI, pointsE)
+    # imageI = imageI[targetI[0]:targetI[1], targetI[2]:targetI[3]]
+    imageE = imageE[targetE[0]:targetE[1], targetE[2]:targetE[3]]
+
+    
+    imageE = cv2.resize(imageE, (500, 650))
+    cv2.imwrite('./tmp/delete/noncrop_'+args.input_image.split('/')[-1]+'.png', imageI)
+    cv2.imwrite('./tmp/delete/crop_'+args.example_image.split('/')[-1]+'.png', imageE)
+
+    pointsI = face_and_landmark_detect(imageI, face_detector, landmark_predictor_68, landmark_predictor_81, args.input_image.split('/')[-1])
+    pointsE = face_and_landmark_detect(imageE, face_detector, landmark_predictor_68, landmark_predictor_81, args.example_image.split('/')[-1])
     imageI_triangle_list = get_triangle_and_index(pointsI, imageI, args.input_image.split('/')[-1])
     t4 = time.time()
 
@@ -139,7 +159,7 @@ def load_image_and_morph(args):
     print('Complete load image_resize in {}s'.format(round(t3-t2, 2)))
     print('Complete face_landmarks_triangle_index in {}s'.format(round(t4-t3, 2)))
     print('Complete morph in {}s'.format(round(t5-t4, 2)))
-    cv2.imwrite('./tmp/morph_crop.png', image_morph)
+    # cv2.imwrite('./tmp/crop_new_'+args.input_image.split('/')[-1]+'_'+args.example_image.split('/')[-1]+'.png', image_morph)
     return input_images_number, example_images_number
 
 def get_filelist(dirpath):
