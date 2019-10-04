@@ -142,7 +142,7 @@ def StyleTransfer(opt):
                                                                         Map=Maps[i])
                 Loss_gain += loss_gain_item
                 Loss_style += loss_style_item
-            
+            # loss term
             Loss = Loss_gain + Loss_style
             
             if iters%opt.iter_show == 0:
