@@ -33,5 +33,9 @@ More samples needed... PLEASE!
 Unet-like reconstructor implementation.\
 Facial detection crop. Experiments around different set of parameters to balance loss terms.
 
+### 20191004
+1. ADD landmarks -- up to 81+8 now.
+2. Reconstruction network completed, GPU account is required to train it.
+
 
 

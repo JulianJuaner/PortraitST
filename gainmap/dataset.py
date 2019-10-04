@@ -75,3 +75,44 @@ class ST_dataset(data.Dataset):
             img = Variable(tensor, requires_grad=False)
         return img
 
+# Dataset for reconstruction network.
+class RC_dataset(data.Dataset):
+    def __init__(self, root, name='train', mode='unpaired'):
+        self.feat = make_dataset(os.path.join(root,'styles'))
+        self.input = make_dataset(os.path.join(root,'ffhq'))
+        self.mode = mode
+        self.name = name
+        self.trans = make_trans()
+
+    def __getitem__(self, index, name):
+        if 'train' in self.name:
+            style = self.feat[random.randint(0, len(self.feat)-100)]
+            face = self.input[random.randint(0, 67000)]
+        elif 'test' in self.name:
+            style = self.feat[len(self.feat)-99, len(self.feat)-1]
+            face = self.input[random.randint(68000, 69000)]
+
+        return [self.get_image(face, 'input'), self.get_image(style, 'style')]
+
+    def get_image(self, filename, mode):
+        src = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
+        src = cv2.resize(src, (512, 512))
+        img = src.astype(np.float32)
+
+        tensor = self.trans(img)
+        if 'input' in mode:
+            img = Variable(tensor, requires_grad=False)
+        elif 'style' in mode:
+            img = Variable(tensor, requires_grad=False)
+        return img
+
+    def __len__(self):
+        if 'train' in self.name: 
+            return len(self.feat)-100
+        else:
+            return 10
+
+
+
+
+

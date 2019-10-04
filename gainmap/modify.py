@@ -176,4 +176,4 @@ if __name__ == '__main__':
     parser = OptionInit.initialize(parser)
     opt = parser.parse_args()
     StyleTransfer(opt)
-    pass
+    
