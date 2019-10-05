@@ -9,7 +9,7 @@ import tensorboardX
 
 from tqdm import tqdm
 from VGG import myVGG
-from dataset import ST_dataset
+from dataset import ST_dataset, de_norm
 from options import FeatureOptions
 from torch.utils.data import DataLoader
 from torchvision.utils import make_grid, save_image
@@ -81,7 +81,7 @@ def StyleTransfer(opt):
     model = myVGG(layers=opt.layers.split(',')).cuda()
     
     totalLoss = OverAllLoss(opt)
-
+    DN = de_norm()
     os.makedirs("./log/%s/"%opt.outf, exist_ok=True)
     os.makedirs("./checkpoints/%s/"%opt.outf, exist_ok=True)
     train_writer = tensorboardX.SummaryWriter("./log/%s/"%opt.outf)
@@ -147,7 +147,7 @@ def StyleTransfer(opt):
             
             if iters%opt.iter_show == 0:
                 # record result pics.
-                temp_image = make_grid(output, nrow=opt.batch_size, padding=0, normalize=True)
+                temp_image = make_grid(torch.clamp(DN(output[0]).unsqueeze(0),0,1), nrow=opt.batch_size, padding=0, normalize=False)
                 train_writer.add_image('temp result', temp_image, iters+images*opt.iter)
 
                 if iters%(opt.iter_show*30) == 0:

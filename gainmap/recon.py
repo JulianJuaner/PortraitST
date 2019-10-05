@@ -18,7 +18,6 @@ from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
 from torchvision.utils import make_grid
 from modify import ModifyMap, OverAllLoss
-from utils import init_weights, get_scheduler
 
 # Convolution block.
 class doubleConv(torch.nn.Module):
@@ -78,12 +77,12 @@ class VGGRC(nn.Module):
         out_feat = self.VGG(out)
         Loss_rc = self.loss(out, face)
         Loss_cycle = 0
-
+        
         for i in range(len(self.VGG.layers)):
 
             Loss_cycle += self.loss_cycle(out_feat[i], face_feat[i])
 
-        Loss = 50*Loss_rc + Loss_cycle
+        Loss = 10*Loss_rc + Loss_cycle
         return Loss, out
 
 # The reconstruction network.
@@ -159,15 +158,12 @@ def trainRC(opt):
     model = VGGRC(opt).cuda()
     if opt.start>=1:
         model.load_state_dict(torch.load('checkpoints/rec/%s/model_%d.pth' % (opt.outf, opt.start)))
-    else:
-        init_weights(model, init_type='kaiming')
-        
     os.makedirs("./log/rec/%s/"%opt.outf, exist_ok=True)
     os.makedirs("./checkpoints/rec/%s/"%opt.outf, exist_ok=True)
     train_writer = tensorboardX.SummaryWriter("./log/rec/%s/"%opt.outf)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=3e-5, weight_decay=1e-8)
-    #scheduler = lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.1)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-8)
+    scheduler = lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.1)
     traindataset  = RC_dataset(root=opt.root, name='train', mode='unpaired')
     dataloader = DataLoader(
             traindataset, 
@@ -203,10 +199,10 @@ def trainRC(opt):
 
                         #temp_image = make_grid(test[1], nrow=1, padding=0, normalize=True)
                         #train_writer.add_image('style', temp_image, iters+k2)
-                        temp_image = make_grid(torch.clamp((DN(test[0][0])/255).unsqueeze(0),0, 1), nrow=1, padding=0, normalize=False)
+                        temp_image = make_grid(torch.clamp(DN(test[0][0]).unsqueeze(0),0,1), nrow=1, padding=0, normalize=False)
                         train_writer.add_image('face', temp_image, iters+k2)
-                        
-                        temp_image = make_grid(torch.clamp((DN(out[0])/255).unsqueeze(0), 0, 1), nrow=1, padding=0, normalize=False)
+                        #print(DN(test[0][0]))
+                        temp_image = make_grid(torch.clamp(DN(out[0]).unsqueeze(0), 0, 1), nrow=1, padding=0, normalize=False)
                         train_writer.add_image('out', temp_image, iters+k2)
 
             Loss.backward(retain_graph=True)

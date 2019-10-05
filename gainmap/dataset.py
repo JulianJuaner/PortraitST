@@ -25,10 +25,10 @@ def de_norm():
 
 # normalization step before puts in VGG.
 def make_trans():
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
-    tensorize = transforms.ToTensor()
-    trans = transforms.Compose([tensorize, normalize])
+    trans = transforms.Compose([
+        transforms.ToTensor(), 
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])])
     return trans
 
 # test file by extension
@@ -76,7 +76,7 @@ class ST_dataset(data.Dataset):
     def get_image(self, filename, mode='input'):
         src = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
         src = cv2.resize(src, (500, 660))
-        img = src.astype(np.float32)
+        img = Image.fromarray(src)
         #tensor = torch.from_numpy(img.transpose(2,0,1))
         tensor = self.trans(img)
         if 'input' in mode:
@@ -109,7 +109,7 @@ class RC_dataset(data.Dataset):
     def get_image(self, filename, mode):
         src = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
         src = cv2.resize(src, (512, 512))
-        img = src.astype(np.float32)
+        img = Image.fromarray(src)
 
         tensor = self.trans(img)
         if 'input' in mode:

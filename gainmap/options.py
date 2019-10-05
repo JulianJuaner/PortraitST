@@ -13,12 +13,12 @@ class FeatureOptions():
         # Dataset options
         parser.add_argument('--root', type=str, default='../datasets', help='root path of test images')
         parser.add_argument('--name', type=str, default='gaintest', help='name of the dataset')
-        parser.add_argument('--outf', type=str, default='VGGRC_style', help='name of the dataset')
+        parser.add_argument('--outf', type=str, default='men', help='name of the dataset')
         parser.add_argument('--max_size', type=tuple, default=(1024, 1024), help='the maximum size of test images')
 
         # Training options
-        parser.add_argument('--batch_size', type=int, default=3, help='input batch size')
-        parser.add_argument('--lr', type=float, default=10, help='learning rate')
+        parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
+        parser.add_argument('--lr', type=float, default=1e-1, help='learning rate')
         parser.add_argument('--iter_show', type=int, default=10, help='iters to show the midate results')
         parser.add_argument('--layers', type=str, default=partialLayer)
         parser.add_argument('--epoch', type=int, default=50)
