@@ -12,7 +12,7 @@ from torchvision import models
 # (start-conv3_1; conv3_2-conv4_1) to enhance performance.
 
 class myVGG(nn.Module):
-    def __init__(self, requires_grad=False, layers=None, BN=True):
+    def __init__(self, requires_grad=False, layers=None, BN=False):
         super(myVGG, self).__init__()
 
         if BN:

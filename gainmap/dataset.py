@@ -2,6 +2,7 @@ from __future__ import print_function
 import torch.utils.data as data
 import os
 import torch
+import random
 import numpy as np
 from torch.autograd import Variable
 import torchvision.transforms as transforms
@@ -84,15 +85,17 @@ class RC_dataset(data.Dataset):
         self.name = name
         self.trans = make_trans()
 
-    def __getitem__(self, index, name):
+    def __getitem__(self, index):
         if 'train' in self.name:
-            style = self.feat[random.randint(0, len(self.feat)-100)]
+            style = self.feat[(index)%(len(self.feat)-100)]
+            #style = self.feat[random.randint(0, len(self.feat)-100)]
             face = self.input[random.randint(0, 67000)]
         elif 'test' in self.name:
-            style = self.feat[len(self.feat)-99, len(self.feat)-1]
+            style = self.feat[random.randint(len(self.feat)-99, len(self.feat)-1)]
             face = self.input[random.randint(68000, 69000)]
-
-        return [self.get_image(face, 'input'), self.get_image(style, 'style')]
+        #print(face, style)
+        return [self.get_image(face, 'input'),
+                self.get_image(style, 'style')]
 
     def get_image(self, filename, mode):
         src = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
