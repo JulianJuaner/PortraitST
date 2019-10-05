@@ -14,6 +14,15 @@ IMG_EXTENSIONS = [
     '.png', '.PNG', '.bmp', '.BMP',
 ]
 
+# denormalize
+def de_norm():
+    invTrans = transforms.Compose([ transforms.Normalize(mean = [ 0., 0., 0. ],
+                                                     std = [ 1/0.229, 1/0.224, 1/0.225 ]),
+                                transforms.Normalize(mean = [ -0.485, -0.456, -0.406 ],
+                                                     std = [ 1., 1., 1. ]),
+                               ])
+    return invTrans
+
 # normalization step before puts in VGG.
 def make_trans():
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],

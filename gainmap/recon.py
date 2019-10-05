@@ -12,7 +12,7 @@ import tensorboardX
 
 from tqdm import tqdm
 from VGG import myVGG
-from dataset import RC_dataset
+from dataset import RC_dataset, de_norm
 from options import FeatureOptions
 from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
@@ -82,7 +82,7 @@ class VGGRC(nn.Module):
 
             Loss_cycle += self.loss_cycle(out_feat[i], face_feat[i])
 
-        Loss = 5*Loss_rc #+ Loss_cycle
+        Loss = 50*Loss_rc + Loss_cycle
         return Loss, out
 
 # The reconstruction network.
@@ -154,17 +154,19 @@ class FeatureRC(nn.Module):
 # train function.
 def trainRC(opt):
     print('loading VGG models......')
+    DN = de_norm()
     model = VGGRC(opt).cuda()
-
+    if opt.start>=1:
+        model.load_state_dict(torch.load('checkpoints/rec/%s/model_%d.pth' % (opt.outf, opt.start)))
     os.makedirs("./log/rec/%s/"%opt.outf, exist_ok=True)
     os.makedirs("./checkpoints/rec/%s/"%opt.outf, exist_ok=True)
     train_writer = tensorboardX.SummaryWriter("./log/rec/%s/"%opt.outf)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr, weight_decay=1e-8)
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.1)
-
+    optimizer = torch.optim.Adam(model.parameters(), lr=3e-5, weight_decay=1e-8)
+    #scheduler = lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.1)
+    traindataset  = RC_dataset(root=opt.root, name='train', mode='unpaired')
     dataloader = DataLoader(
-            RC_dataset(root=opt.root, name='train', mode='unpaired'),
+            traindataset, 
             batch_size=opt.batch_size, 
             shuffle=False,
             num_workers=0,
@@ -177,18 +179,18 @@ def trainRC(opt):
             num_workers=0,
     )
 
-    iters = 0
+    iters = 0 + opt.start*len(traindataset)
     print('start processing.')
-    for epoch in range(opt.epoch):
+    for epoch in range(opt.start, opt.epoch):
         pbar = tqdm(total=len(dataloader))
         for k, data in enumerate(dataloader):
-            iters += 1
-            Loss, out = model(data[0].cuda())
+            iters += opt.batch_size
+            Loss, out = model(data[1].cuda())
 
             if iters%50 == 0:
                 train_writer.add_scalar("total_loss", Loss.item(), iters)
 
-            if iters%300 == 0:
+            if iters%100 == 0:
                 index = 0
 
                 for k2, test in enumerate(testloader):
@@ -197,9 +199,10 @@ def trainRC(opt):
 
                         #temp_image = make_grid(test[1], nrow=1, padding=0, normalize=True)
                         #train_writer.add_image('style', temp_image, iters+k2)
-                        temp_image = make_grid(test[0], nrow=1, padding=0, normalize=True)
+                        temp_image = make_grid(torch.clamp((DN(test[0][0])/255).unsqueeze(0),0, 1), nrow=1, padding=0, normalize=False)
                         train_writer.add_image('face', temp_image, iters+k2)
-                        temp_image = make_grid(out, nrow=1, padding=0, normalize=True)
+                        
+                        temp_image = make_grid(torch.clamp((DN(out[0])/255).unsqueeze(0), 0, 1), nrow=1, padding=0, normalize=False)
                         train_writer.add_image('out', temp_image, iters+k2)
 
             Loss.backward(retain_graph=True)
@@ -207,6 +210,7 @@ def trainRC(opt):
             optimizer.zero_grad()
             
             pbar.update(1)
+
         pbar.close()
         torch.save(model.cpu().state_dict(), 'checkpoints/rec/%s/model_%d.pth' % (opt.outf, epoch))
         model.cuda()
