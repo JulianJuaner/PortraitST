@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
 from torchvision.utils import make_grid
 from modify import ModifyMap, OverAllLoss
+from utils import init_weights, get_scheduler
 
 # Convolution block.
 class doubleConv(torch.nn.Module):
@@ -158,6 +159,9 @@ def trainRC(opt):
     model = VGGRC(opt).cuda()
     if opt.start>=1:
         model.load_state_dict(torch.load('checkpoints/rec/%s/model_%d.pth' % (opt.outf, opt.start)))
+    else:
+        init_weights(model, init_type='kaiming')
+        
     os.makedirs("./log/rec/%s/"%opt.outf, exist_ok=True)
     os.makedirs("./checkpoints/rec/%s/"%opt.outf, exist_ok=True)
     train_writer = tensorboardX.SummaryWriter("./log/rec/%s/"%opt.outf)
