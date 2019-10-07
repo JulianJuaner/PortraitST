@@ -8,12 +8,12 @@ class FeatureOptions():
     def initialize(self, parser):
 
         allLayer = 'conv1_1,conv1_2,conv2_1,conv2_2,conv3_1,conv3_2,conv3_3,conv3_4,conv4_1,conv4_2,conv4_3,conv4_4,conv5_1,conv5_2,conv5_3,conv5_4'
-        partialLayer = 'conv1_1,conv2_1,conv3_1,conv4_1,conv5_1'
+        partialLayer = 'conv2_1,conv3_1,conv4_1,conv5_1'
         
         # Dataset options
         parser.add_argument('--root', type=str, default='../datasets', help='root path of test images')
         parser.add_argument('--name', type=str, default='gaintest', help='name of the dataset')
-        parser.add_argument('--outf', type=str, default='men', help='name of the dataset')
+        parser.add_argument('--outf', type=str, default='man_test', help='name of the dataset')
         parser.add_argument('--max_size', type=tuple, default=(1024, 1024), help='the maximum size of test images')
 
         # Training options
@@ -30,10 +30,10 @@ class FeatureOptions():
         parser.add_argument('--beta_3', type=float, default=0.5, help='layer preference of conv3 second term')
         parser.add_argument('--beta_4', type=float, default=0.5, help='layer preference of conv4 second term')
 
-        parser.add_argument('--iter', type=int, default=15000, help='iterations of feed-forward and back-propagation')
-        parser.add_argument('--gmin', type=float, default=0.7, help='lower bound clamp gain map')
-        parser.add_argument('--gmax', type=float, default=5.0, help='upper bound clamp gain map')
-        parser.add_argument('--gT', type=float, default=100, help='balance two terms in the total loss')
+        parser.add_argument('--iter', type=int, default=2000, help='iterations of feed-forward and back-propagation')
+        parser.add_argument('--gmin', type=float, default=0.2, help='lower bound clamp gain map')
+        parser.add_argument('--gmax', type=float, default=10.0, help='upper bound clamp gain map')
+        parser.add_argument('--gT', type=float, default=2e-7, help='balance two terms in the total loss')
 
         self.initialized = True
         return parser

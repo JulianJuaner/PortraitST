@@ -69,7 +69,7 @@ class OverAllLoss():
             alpha = 1.0
             beta = 1.0
 
-        Gain_loss = alpha * self.L2(Input, Map) / 2*Style.shape[1]*Style.shape[2]*Style.shape[3]
+        Gain_loss = alpha * self.L2(Input, Map) / (2*Style.shape[1]*Style.shape[2]*Style.shape[3])
 
         Style_loss = self.gT * beta /(4*math.pow(Style.shape[1], 2))\
                     * self.transposed_mul(Input, Style)

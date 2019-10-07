@@ -54,7 +54,10 @@ class VGGRC(nn.Module):
         self.conv4 = doubleConv(64*2, 64)
         self.net_output = nn.Conv2d(64, 3, 1, 1, 0)
         self.opt = opt
-        
+
+        if requires_grad == False:
+            for param in self.parameters():
+                param.requires_grad = False
 
     def net_forward(self, Input):
         x = self.upscale_1(Input[4])
@@ -155,7 +158,7 @@ class FeatureRC(nn.Module):
 def trainRC(opt):
     print('loading VGG models......')
     DN = de_norm()
-    model = VGGRC(opt).cuda()
+    model = FeatureRC(opt).cuda()
     if opt.start>=1:
         model.load_state_dict(torch.load('checkpoints/rec/%s/model_%d.pth' % (opt.outf, opt.start)))
     os.makedirs("./log/rec/%s/"%opt.outf, exist_ok=True)
@@ -185,7 +188,7 @@ def trainRC(opt):
         pbar = tqdm(total=len(dataloader))
         for k, data in enumerate(dataloader):
             iters += opt.batch_size
-            Loss, out = model(data[1].cuda())
+            Loss, out = model(data[0].cuda(), data[1].cuda())
 
             if iters%50 == 0:
                 train_writer.add_scalar("total_loss", Loss.item(), iters)
@@ -195,13 +198,14 @@ def trainRC(opt):
 
                 for k2, test in enumerate(testloader):
                     if k2 == 0:
-                        _, out = model(test[0].cuda())
+                        _, out = model(test[0].cuda(), test[1].cuda())
 
-                        #temp_image = make_grid(test[1], nrow=1, padding=0, normalize=True)
-                        #train_writer.add_image('style', temp_image, iters+k2)
+                        temp_image = make_grid(torch.clamp(DN(test[1][0]).unsqueeze(0),0,1), nrow=1, padding=0, normalize=False)
+                        train_writer.add_image('style', temp_image, iters+k2)
+
                         temp_image = make_grid(torch.clamp(DN(test[0][0]).unsqueeze(0),0,1), nrow=1, padding=0, normalize=False)
                         train_writer.add_image('face', temp_image, iters+k2)
-                        #print(DN(test[0][0]))
+
                         temp_image = make_grid(torch.clamp(DN(out[0]).unsqueeze(0), 0, 1), nrow=1, padding=0, normalize=False)
                         train_writer.add_image('out', temp_image, iters+k2)
 
