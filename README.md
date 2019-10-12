@@ -37,5 +37,10 @@ Facial detection crop. Experiments around different set of parameters to balance
 1. ADD landmarks -- up to 81+8 now.
 2. Reconstruction network completed, GPU account is required to train it.
 
+### 20191012
+1. Reconstruction for VGG works well.
+2. sift flow used, but get a unsatisfying effect.
+3. (Future works)) StyLit implementation
+
 
 
