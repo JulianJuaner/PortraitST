@@ -62,7 +62,7 @@ class ST_dataset(data.Dataset):
         self.trans = make_trans()
 
     def __getitem__(self, index):
-        if self.mode == 'paired':
+        if 'paired' in self.mode:
             return [self.get_image(self.feat[index%len(self)], mode='style'),
              self.get_image(self.input[index%1], mode='input')]
         else:
@@ -75,7 +75,12 @@ class ST_dataset(data.Dataset):
     # open and get a image tensor.
     def get_image(self, filename, mode='input'):
         src = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
-        src = cv2.resize(src, (500, 660))
+        
+        if 'VGG' in self.mode:
+            src = cv2.resize(src, (512, 512))
+        else:
+            src = cv2.resize(src, (500, 660))
+
         img = Image.fromarray(src)
         #tensor = torch.from_numpy(img.transpose(2,0,1))
         tensor = self.trans(img)
@@ -112,10 +117,8 @@ class RC_dataset(data.Dataset):
         img = Image.fromarray(src)
 
         tensor = self.trans(img)
-        if 'input' in mode:
-            img = Variable(tensor, requires_grad=False)
-        elif 'style' in mode:
-            img = Variable(tensor, requires_grad=False)
+       
+        img = Variable(tensor, requires_grad=False) 
         return img
 
     def __len__(self):

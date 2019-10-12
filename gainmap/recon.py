@@ -3,6 +3,7 @@
 # Main purpose is to speed up the training process and reduce number of iterations.
 
 import os
+import cv2
 import sys
 import torch
 import torch.nn as nn
@@ -12,7 +13,7 @@ import tensorboardX
 
 from tqdm import tqdm
 from VGG import myVGG
-from dataset import RC_dataset, de_norm
+from dataset import RC_dataset, ST_dataset, de_norm
 from options import FeatureOptions
 from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
@@ -219,10 +220,47 @@ def trainRC(opt):
         torch.save(model.cpu().state_dict(), 'checkpoints/rec/%s/model_%d.pth' % (opt.outf, epoch))
         model.cuda()
 
+def recon(opt):
+    DN = de_norm()
+    model = VGGRC(opt).cuda()
+    model.load_state_dict(torch.load('checkpoints/rec/%s/model_%d.pth' % (opt.outf, opt.start)))
+
+    train_writer = tensorboardX.SummaryWriter("./log/img/%s/"%opt.outf)
+    os.makedirs("./checkpoints/img/%s/"%opt.outf, exist_ok=True)
+    testloader = DataLoader(
+            ST_dataset(root=opt.root, name=opt.name, mode='pairedVGG'),
+            batch_size=1, 
+            shuffle=False,
+            num_workers=0,
+    )
+    pbar = tqdm(total=len(testloader))
+    for k, data in enumerate(testloader):
+
+        Maps = []
+        face_feat = model.VGG(data[1].cuda())
+        style_feat = model.VGG(data[0].cuda())
+
+        for i in range(len(model.VGG.layers)):
+            Maps += [ModifyMap(style_feat[i], face_feat[i], opt)]
+        
+        out = model.net_forward(Maps)
+        temp_image = make_grid(torch.clamp(DN(out[0]).unsqueeze(0), 0, 1), nrow=1, padding=0, normalize=False)
+        train_writer.add_image('outimg', temp_image, k)
+        #print(temp_image.cpu().detach().numpy().shape)
+        m = cv2.imwrite(
+            "./checkpoints/img/%s/%d.png"%(opt.outf, k),
+            cv2.cvtColor(
+                cv2.resize(255*temp_image.cpu().detach().numpy().transpose(1,2,0), (500, 660)),
+                cv2.COLOR_BGR2RGB
+            )
+        )
+        #save_image(temp_image, "./checkpoints/%s/%d.png"%(opt.outf, k))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     OptionInit = FeatureOptions(parser)
     parser = OptionInit.initialize(parser)
     opt = parser.parse_args()
-    trainRC(opt)
+    recon(opt)
+    #trainRC(opt)

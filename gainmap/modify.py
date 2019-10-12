@@ -151,7 +151,7 @@ def StyleTransfer(opt):
                 train_writer.add_image('temp result', temp_image, iters+images*opt.iter)
 
                 if iters%(opt.iter_show*30) == 0:
-                    save_image(temp_image, "./checkpoints/%s/%d%d.png"%(opt.outf, k, iters))
+                    save_image(temp_image, "./checkpoints/%s/%d_%d.png"%(opt.outf, k, iters))
                     
                 
                 
