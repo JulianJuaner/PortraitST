@@ -18,7 +18,7 @@ class FeatureOptions():
 
         # Training options
         parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
-        parser.add_argument('--lr', type=float, default=3e-2, help='learning rate')
+        parser.add_argument('--lr', type=float, default=1, help='learning rate')
         parser.add_argument('--iter_show', type=int, default=10, help='iters to show the midate results')
         parser.add_argument('--layers', type=str, default=partialLayer)
         parser.add_argument('--epoch', type=int, default=50)
@@ -30,10 +30,10 @@ class FeatureOptions():
         parser.add_argument('--beta_3', type=float, default=0.8, help='layer preference of conv3 second term')
         parser.add_argument('--beta_4', type=float, default=0.8, help='layer preference of conv4 second term')
 
-        parser.add_argument('--iter', type=int, default=5000, help='iterations of feed-forward and back-propagation')
-        parser.add_argument('--gmin', type=float, default=0.25, help='lower bound clamp gain map')
-        parser.add_argument('--gmax', type=float, default=5.0, help='upper bound clamp gain map')
-        parser.add_argument('--gT', type=float, default=1e-6, help='balance two terms in the total loss')
+        parser.add_argument('--iter', type=int, default=300, help='iterations of feed-forward and back-propagation')
+        parser.add_argument('--gmin', type=float, default=0.3, help='lower bound clamp gain map')
+        parser.add_argument('--gmax', type=float, default=4.0, help='upper bound clamp gain map')
+        parser.add_argument('--gT', type=float, default=5e-7, help='balance two terms in the total loss')
 
         self.initialized = True
         return parser

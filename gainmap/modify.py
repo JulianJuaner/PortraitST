@@ -119,32 +119,36 @@ def StyleTransfer(opt):
         output = torch.nn.Parameter(output, requires_grad=True)
         images += 1
         # Set optimizer.
-        optimizer = torch.optim.Adam([output], lr=opt.lr)
+        optimizer = torch.optim.LBFGS([output], lr=opt.lr)
         optimizer.zero_grad()
 
         # Iteration for 300 times.
         pbar = tqdm(total=opt.iter)
 
         for iters in range(opt.iter+1):
+            def closure():
+                input_feats = model(output)
+                optimizer.zero_grad()
+                Loss_gain = 0
+                Loss_style = 0
 
-            Loss_gain = 0
-            Loss_style = 0
+                for i in range(len(model.layers)):
+                    if 'conv3_1' in model.layers[i]:
+                        loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
+                                                                            Map=Maps[i], mode='conv3_1')
+                    elif 'conv4_1' in model.layers[i]:
+                        loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
+                                                                            Map=Maps[i], mode='conv4_1')
+                    else:
+                        loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
+                                                                            Map=Maps[i])
+                    Loss_gain += loss_gain_item
+                    Loss_style += loss_style_item
+                # loss term
+                Loss = Loss_gain + Loss_style
+                Loss.backward(retain_graph=True)
+                return Loss
 
-            for i in range(len(model.layers)):
-                if 'conv3_1' in model.layers[i]:
-                    loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
-                                                                        Map=Maps[i], mode='conv3_1')
-                elif 'conv4_1' in model.layers[i]:
-                    loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
-                                                                        Map=Maps[i], mode='conv4_1')
-                else:
-                    loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
-                                                                        Map=Maps[i])
-                Loss_gain += loss_gain_item
-                Loss_style += loss_style_item
-            # loss term
-            Loss = Loss_gain + Loss_style
-            
             if iters%opt.iter_show == 0:
                 # record result pics.
                 temp_image = make_grid(torch.clamp(DN(output[0]).unsqueeze(0),0,1), nrow=opt.batch_size, padding=0, normalize=False)
@@ -155,17 +159,16 @@ def StyleTransfer(opt):
                     
                 
                 
-            if iters%10 == 0:
+            #if iters%10 == 0:
                 # record loss items variation
-                train_writer.add_scalar("total_loss", Loss.item(), iters+images*opt.iter)
-                train_writer.add_scalar("loss_gain", Loss_gain.item(), iters+images*opt.iter)
-                train_writer.add_scalar("loss_style", Loss_style.item(), iters+images*opt.iter)
+                #train_writer.add_scalar("total_loss", Loss.item(), iters+images*opt.iter)
+                #train_writer.add_scalar("loss_gain", Loss_gain.item(), iters+images*opt.iter)
+                #train_writer.add_scalar("loss_style", Loss_style.item(), iters+images*opt.iter)
 
             # Updates.
-            Loss.backward(retain_graph=True)
-            optimizer.step()
-            optimizer.zero_grad()
-            input_feats = model(output)
+            #Loss.backward(retain_graph=True)
+            optimizer.step(closure)
+            #optimizer.zero_grad()
             pbar.update(1)
 
         pbar.close()
