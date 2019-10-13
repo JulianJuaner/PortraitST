@@ -79,7 +79,7 @@ class ST_dataset(data.Dataset):
         if 'VGG' in self.mode:
             src = cv2.resize(src, (512, 512))
         else:
-            src = cv2.resize(src, (500, 660))
+            src = cv2.resize(src, (256, 336))
 
         img = Image.fromarray(src)
         #tensor = torch.from_numpy(img.transpose(2,0,1))
