@@ -27,7 +27,11 @@ class StyLit():
 
         self.output = np.zeros((after_size[0], after_size[1], 3))
         
-    def 
+    def get_guide_channel(self):
+        self.style_guide = []
+        self.input_guide = []
+
+    
 
 
     
