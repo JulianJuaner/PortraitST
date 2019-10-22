@@ -134,7 +134,6 @@ def load_image_and_morph(args):
     # imageI = imageI[targetI[0]:targetI[1], targetI[2]:targetI[3]]
     imageE = imageE[targetE[0]:targetE[1], targetE[2]:targetE[3]]
 
-
     imageE = cv2.resize(imageE, (500, 650))
     cv2.imwrite('./tmp/delete/noncrop_'+args.input_image.split('/')[-1]+'.png', imageI)
     cv2.imwrite('./tmp/delete/crop_'+args.example_image.split('/')[-1]+'.png', imageE)

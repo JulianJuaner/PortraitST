@@ -1,0 +1,15 @@
+*.pth
+*.png
+*.jpg
+*.jpeg
+*.out*
+*.pyc
+*.dat
+*.zip
+*.csv
+*.html
+*SIFT*
+*git*
+*ref*
+
+
