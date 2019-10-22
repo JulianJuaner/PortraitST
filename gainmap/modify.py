@@ -161,7 +161,7 @@ def StyleTransfer(opt):
 
             if iters%opt.iter_show == 0:
                 # record result pics.
-                temp_image = make_grid(output[0].unsqueeze(0), nrow=opt.batch_size, padding=0, normalize=True)
+                temp_image = make_grid(torch.clamp(DN(output[0]).unsqueeze(0),0,1), nrow=opt.batch_size, padding=0, normalize=False)
                 train_writer.add_image('temp result', temp_image, iters+images*opt.iter)
 
                 if iters%(10) == 0:

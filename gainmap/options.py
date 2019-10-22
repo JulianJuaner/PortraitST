@@ -13,7 +13,7 @@ class FeatureOptions():
         # Dataset options
         parser.add_argument('--root', type=str, default='../datasets',      help='root path of test images')
         parser.add_argument('--name', type=str, default='gaintest',         help='name of the dataset')
-        parser.add_argument('--outf', type=str, default='feature_base',        help='name of the dataset')
+        parser.add_argument('--outf', type=str, default='feature',        help='name of the dataset')
         parser.add_argument('--max_size', type=tuple, default=(1024, 1024), help='the maximum size of test images')
 
         # Training options
@@ -33,8 +33,8 @@ class FeatureOptions():
 
         parser.add_argument('--iter', type=int, default=20,                 help='iterations of feed-forward and back-propagation')
         parser.add_argument('--gmin', type=float, default=0.7,              help='lower bound clamp gain map')
-        parser.add_argument('--gmax', type=float, default=3.0,              help='upper bound clamp gain map')
-        parser.add_argument('--gT', type=float, default=5e-6,               help='balance two terms in the total loss')
+        parser.add_argument('--gmax', type=float, default=5.0,              help='upper bound clamp gain map')
+        parser.add_argument('--gT', type=float, default=1e-5,               help='balance two terms in the total loss')
 
         self.initialized = True
         return parser

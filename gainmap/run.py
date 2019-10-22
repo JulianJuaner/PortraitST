@@ -4,6 +4,7 @@ import sys
 import torch
 import torch.nn as nn
 import math
+import copy
 import argparse
 import tensorboardX
 
@@ -41,7 +42,7 @@ def modifedStyleTransfer(opt):
         totalLoss = OverAllLoss(opt)
         Maps = FeatureMap(opt)
         Maps.mapload(input_feats, style_feats, len(model.VGG.layers))
-        Maplist = Maps.featureList
+        Maplist = input_feats
 
         out = model.net_forward(Maplist)
         temp_image = make_grid(torch.clamp(DN(out[0]).unsqueeze(0), 0, 1), nrow=1, padding=0, normalize=False)
@@ -68,10 +69,10 @@ def modifedStyleTransfer(opt):
             output = torch.nn.Parameter(output, requires_grad=True)
             optimizer = torch.optim.LBFGS([output], lr=opt.lr)
         else:
-            total_iter *= 100
+            total_iter *= 30
             for layer in range(5):
                 Maplist[layer] = torch.nn.Parameter(Maplist[layer], requires_grad=True)
-            optimizer = torch.optim.Adam(Maplist, lr=1e-2, weight_decay=1e-8)
+            optimizer = torch.optim.Adam(Maplist, lr=1e-5, weight_decay=1e-8)
 
         optimizer.zero_grad()
 
@@ -87,15 +88,9 @@ def modifedStyleTransfer(opt):
                 Loss_style = 0
                 Loss = 0
                 for i in range(len(model.VGG.layers)):
-                    if 'conv3_1' in model.VGG.layers[i]:
-                        loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
-                                                                            Map=Maplist[i], mode='conv3_1')
-                    elif 'conv4_1' in model.VGG.layers[i]:
-                        loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
-                                                                            Map=Maplist[i], mode='conv4_1')
-                    else:
-                        loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
-                                                                            Map=Maplist[i])
+                    loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
+                                                        Map=Maps.featureList[i], mode=model.VGG.layers[i])
+
                     Loss_gain += loss_gain_item
                     Loss_style += loss_style_item
                 # loss term
@@ -121,26 +116,20 @@ def modifedStyleTransfer(opt):
                 Loss_style = 0
                 Loss = 0
                 for i in range(len(model.VGG.layers)):
-                    if 'conv3_1' in model.VGG.layers[i]:
-                        loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
-                                                                            Map=Maps.featureList[i], mode='conv3_1')
-                    elif 'conv4_1' in model.VGG.layers[i]:
-                        loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
-                                                                            Map=Maps.featureList[i], mode='conv4_1')
-                    else:
-                        loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
-                                                                            Map=Maps.featureList[i])
+                    loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
+                                                        Map=Maps.featureList[i], mode=model.VGG.layers[i])
+
                     Loss_gain += loss_gain_item
                     Loss_style += loss_style_item
                 # loss term
                 Loss = Loss_gain + Loss_style
                 Loss.backward(retain_graph=True)
                 optimizer.step()
-                if iters%opt.iter_show == 0:
+                if iters%(opt.iter_show*10) == 0:
                     # record result pics.
-                    output = model.net_forward(Maps.featureList)
+                    output = model.net_forward(Maplist)
                     temp_image = make_grid(torch.clamp(DN(output[0]).unsqueeze(0),0,1), nrow=opt.batch_size, padding=0, normalize=False)
-                    train_writer.add_image('temp result', temp_image, iters+images*opt.iter)
+                    train_writer.add_image('temp result', temp_image, iters+images*total_iter)
 
                 if iters%(100) == 0:
                     save_image(temp_image, "./checkpoints/%s/%d_%d.png"%(opt.outf, k, iters))
