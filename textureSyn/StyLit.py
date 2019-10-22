@@ -5,6 +5,8 @@ import math
 import numpy as np
 import torch
 import tensorboardX
+sys.path.insert(1, '../gainmap')
+from utils import ResnetGenerator
 
 # Patch based texture Synthesis for Neural Network Outputs
 class StyLit():
@@ -13,6 +15,7 @@ class StyLit():
         self.Level = opt.num_level
         self.zoom_up = opt.zoom_up
         self.patch_size = opt.patch_size
+        self.model = ResnetGenerator(opt.input, 2)
         self.opt = opt
 
     def load_img(self, style, face_target):
@@ -30,6 +33,9 @@ class StyLit():
     def get_guide_channel(self):
         self.style_guide = []
         self.input_guide = []
+
+    def get_result(self, inputs):
+        return self.model(inputs)
 
     
 

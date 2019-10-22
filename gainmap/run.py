@@ -42,7 +42,7 @@ def modifedStyleTransfer(opt):
         totalLoss = OverAllLoss(opt)
         Maps = FeatureMap(opt)
         Maps.mapload(input_feats, style_feats, len(model.VGG.layers))
-        Maplist = input_feats
+        Maplist = Maps.featureList
 
         out = model.net_forward(Maplist)
         temp_image = make_grid(torch.clamp(DN(out[0]).unsqueeze(0), 0, 1), nrow=1, padding=0, normalize=False)
@@ -72,7 +72,7 @@ def modifedStyleTransfer(opt):
             total_iter *= 30
             for layer in range(5):
                 Maplist[layer] = torch.nn.Parameter(Maplist[layer], requires_grad=True)
-            optimizer = torch.optim.Adam(Maplist, lr=1e-5, weight_decay=1e-8)
+            optimizer = torch.optim.Adam(Maplist, lr=1e-2, weight_decay=1e-8)
 
         optimizer.zero_grad()
 
