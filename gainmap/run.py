@@ -11,7 +11,8 @@ import tensorboardX
 from tqdm import tqdm
 from VGG import myVGG
 from dataset import RC_dataset, ST_dataset, de_norm
-from options import FeatureOptions
+sys.path.insert(1, '../options')
+from gainmap_option import FeatureOptions
 from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
 from torchvision.utils import make_grid, save_image
@@ -39,10 +40,13 @@ def modifedStyleTransfer(opt):
     for k, data in enumerate(dataloader):
         style_feats = model.VGG(data[0].cuda())
         input_feats = model.VGG(data[1].cuda())
+        input_feats_copy = model.VGG(data[1].cuda())
         totalLoss = OverAllLoss(opt)
         Maps = FeatureMap(opt)
         Maps.mapload(input_feats, style_feats, len(model.VGG.layers))
-        Maplist = Maps.featureList
+        #FeatureMaps = FeatureMap(opt)
+        #FeatureMaps.mapload(input_feats, style_feats, len(model.VGG.layers))
+        Maplist = input_feats_copy # FeatureMaps.featureList
 
         out = model.net_forward(Maplist)
         temp_image = make_grid(torch.clamp(DN(out[0]).unsqueeze(0), 0, 1), nrow=1, padding=0, normalize=False)
@@ -69,10 +73,10 @@ def modifedStyleTransfer(opt):
             output = torch.nn.Parameter(output, requires_grad=True)
             optimizer = torch.optim.LBFGS([output], lr=opt.lr)
         else:
-            total_iter *= 30
+            total_iter *= 300
             for layer in range(5):
                 Maplist[layer] = torch.nn.Parameter(Maplist[layer], requires_grad=True)
-            optimizer = torch.optim.Adam(Maplist, lr=1e-2, weight_decay=1e-8)
+            optimizer = torch.optim.Adam(Maplist, lr=1e-1)
 
         optimizer.zero_grad()
 
@@ -128,14 +132,15 @@ def modifedStyleTransfer(opt):
                 if iters%(opt.iter_show*10) == 0:
                     # record result pics.
                     output = model.net_forward(Maplist)
-                    temp_image = make_grid(torch.clamp(DN(output[0]).unsqueeze(0),0,1), nrow=opt.batch_size, padding=0, normalize=False)
+                    temp_image = make_grid(output[0].unsqueeze(0), nrow=opt.batch_size, padding=0, normalize=True)
                     train_writer.add_image('temp result', temp_image, iters+images*total_iter)
+                    print(Loss_gain.item(), Loss_style.item())
 
                 if iters%(100) == 0:
                     save_image(temp_image, "./checkpoints/%s/%d_%d.png"%(opt.outf, k, iters))
 
             #optimizer.zero_grad()
-            pbar.update(1)
+            #pbar.update(1)
 
         pbar.close()
 

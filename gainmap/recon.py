@@ -14,7 +14,8 @@ import tensorboardX
 from tqdm import tqdm
 from VGG import myVGG
 from dataset import RC_dataset, ST_dataset, de_norm
-from options import FeatureOptions
+sys.path.insert(1, '../options')
+from gainmap_option import FeatureOptions
 from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
 from torchvision.utils import make_grid
@@ -139,16 +140,8 @@ class FeatureRC(nn.Module):
             Loss_style = 0
             Maps += [ModifyMap(style_feat[i], face_feat[i], self.opt)]
             
-            if 'conv3_1' in self.VGG.layers[i]:
-                loss_gain_item, loss_style_item = self.loss.forward(style_feat[i], 
-                out_feat[i], Map=Maps[i], mode='conv3_1')
-            elif 'conv4_1' in self.VGG.layers[i]:
-                loss_gain_item, loss_style_item = self.loss.forward(style_feat[i], 
-                out_feat[i], Map=Maps[i], mode='conv4_1')
-            else:
-                loss_gain_item, loss_style_item = self.loss.forward(style_feat[i],
-                 out_feat[i], Map=Maps[i])
-
+            loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
+                                                        Map=Maps[i], mode=self.VGG.layers[i])
             Loss_gain += loss_gain_item
             Loss_style += loss_style_item
 

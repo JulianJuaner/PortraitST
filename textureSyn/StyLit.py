@@ -6,13 +6,14 @@ import numpy as np
 import torch
 import tensorboardX
 sys.path.insert(1, '../gainmap')
+sys.path.insert(1, '../options')
+from style_option import StyleOptions
+from dataset import CN_dataset
 from utils import ResnetGenerator
 
 # Patch based texture Synthesis for Neural Network Outputs
-class StyLit():
+class CoordinateNet():
     def __init__(self, opt):
-        self.threshold = opt.threshold
-        self.Level = opt.num_level
         self.zoom_up = opt.zoom_up
         self.patch_size = opt.patch_size
         self.model = ResnetGenerator(opt.input, 2)
@@ -37,7 +38,12 @@ class StyLit():
     def get_result(self, inputs):
         return self.model(inputs)
 
-    
+def train():
 
 
-    
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    OptionInit = StyleOptions(parser)
+    parser = OptionInit.initialize(parser)
+    opt = parser.parse_args()
+    train(opt)    
