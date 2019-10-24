@@ -15,6 +15,7 @@ from tqdm import tqdm
 from style_option import StyleOptions
 from dataset import CN_dataset, de_norm
 from utils import ResnetGenerator
+from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
 from torchvision.utils import make_grid
@@ -53,7 +54,7 @@ class CoordinateNet():
         return self.model(torch.cat((inputA, inputB), dim = 1))
 
     def loss_func(self, data, res):
-        new_img = torch.ones((3, 512, 512), dtype=torch.float64)
+        new_img = Variable(torch.ones((3, 512, 512), dtype=torch.float32), requires_grad=False)
         
         for i in range(512):
             for j in range(512):
@@ -61,7 +62,7 @@ class CoordinateNet():
                 pos_y = int(torch.clamp(res[0][0][i][j] + j, 0, 512))
                 #print(data[2].shape)
                 new_img[:, i, j] = data[2][0, :, pos_x, pos_y]
-        loss_change = self.L1(new_img, data[1])
+        loss_change = self.L1(new_img, data[1][0])
         return loss_change
 
 # train the network
@@ -95,7 +96,7 @@ def trainCN(opt):
             res = CoorNet.get_result(data[0].cuda(), data[1].cuda())
             Loss = CoorNet.loss_func(data, res)
             print(Loss.item())
-            Loss.backward(retain_graph=True)
+            Loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             pbar.update(1)

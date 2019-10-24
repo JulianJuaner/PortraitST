@@ -42,5 +42,8 @@ Facial detection crop. Experiments around different set of parameters to balance
 2. sift flow used, but get a unsatisfying effect.
 3. (Future works)) StyLit implementation
 
-
+### 20191024
+Happy progammer's day!\
+Coordinate Network is uner construction.\
+Traditional StyLit is needed.\
 
