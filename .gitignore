@@ -9,6 +9,7 @@
 *.csv
 *.html
 *SIFT*
+*filepart*
 *git*
 *ref*
 *.json
