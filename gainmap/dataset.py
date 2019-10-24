@@ -132,31 +132,40 @@ class RC_dataset(data.Dataset):
 
 # Dataset for coordinate prediction network.
 class CN_dataset(data.Dataset):
-    def __init__(self, root, name='train', mode='unpaired'):
-        self.feat = make_dataset(os.path.join(root,'0'))
-        self.input = make_dataset(os.path.join(root,'1'))
+    def __init__(self, root, name='train', mode='paired', length=1200):
+        self.target = make_dataset(os.path.join(root,'target'))
+        self.example = make_dataset(os.path.join(root,'example'))
         self.mode = mode
         self.name = name
         self.trans = make_trans()
+        self.length = length
 
     def __getitem__(self, index):
         if 'train' in self.name:
-            style = self.feat[(index)%(len(self.feat)-100)]
-            #style = self.feat[random.randint(0, len(self.feat)-100)]
-            face1 = self.input[random.randint(0, 67000)]
-            face2 = self.input[random.randint(0, 67000)]
-            print(face1, face2)
+            seed = random.randint(0, self.length)
+            target = self.target[seed]
+            example = self.example[seed]
+            target_resize = target.replace('target', 'target_resize')
+            example_resize = example.replace('example', 'example_resize')
+            
         elif 'test' in self.name:
-            style = self.feat[random.randint(len(self.feat)-99, len(self.feat)-1)]
-            face1 = self.input[random.randint(68000, 69000)]
-            face2 = self.input[random.randint(68000, 69000)]
-        #print(face, style)
-        return [self.get_image(face1, 'input'), self.get_image(face2, 'input'),
-                self.get_image(style, 'style')]
+            target = self.target[seed]
+            example = self.example[seed]
+            target_resize = target.replace('target', 'target_resize')
+            example_resize = example.replace('example', 'example_resize')
+        
+        return [
+                    self.get_image(target_resize, 'blur'),
+                    self.get_image(example_resize, 'blur'),
+                    self.get_image(target),
+                    self.get_image(example)
+                ]
 
-    def get_image(self, filename, mode):
+    def get_image(self, filename, mode = 'noblur'):
         src = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
         src = cv2.resize(src, (512, 512))
+        if mode == 'blur':
+            src = cv2.GaussianBlur(src,(7,7),0)
         img = Image.fromarray(src)
 
         tensor = self.trans(img)
@@ -165,7 +174,4 @@ class CN_dataset(data.Dataset):
         return img
 
     def __len__(self):
-        if 'train' in self.name: 
-            return len(self.feat)-100
-        else:
-            return 10
+        return self.length
