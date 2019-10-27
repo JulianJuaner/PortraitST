@@ -19,6 +19,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
 from torchvision.utils import make_grid
+from VGG import conv1_1
 
 # Traditional StyLit Algorithm.
 class StyLit():
@@ -31,7 +32,7 @@ class CoordinateNet():
         self.patch_size = opt.patch_size
         self.model = ResnetGenerator(opt.inchannel, 3).cuda()
         self.opt = opt
-
+        self.detail = conv1_1().cuda()
         # Loss functions.
         self.L1 = torch.nn.L1Loss().cuda()
         self.L2 = torch.nn.MSELoss(reduction='sum').cuda()
@@ -55,6 +56,19 @@ class CoordinateNet():
         self.style_guide = []
         self.input_guide = []
 
+    def transposed_mul(self, Input, Style):
+        output = 0
+
+        Input = Input.reshape(Input.shape[1], -1)
+        Style = Style.reshape(Style.shape[1], -1)
+
+        mul_input = torch.mm(Input, Input.transpose(1, 0))
+        mul_style = torch.mm(Style, Style.transpose(1, 0))
+
+        output = self.compare(mul_input, mul_style)
+
+        return output
+
     def get_result(self, inputA, inputB):
         return self.model(torch.cat((inputA, inputB), dim = 1))
 
@@ -67,7 +81,10 @@ class CoordinateNet():
         #        #print(data[2].shape)
         #        self.new_img[:, i, j] = data[2][0, :, pos_x, pos_y]
         loss_change = self.compare(res, data[2].cuda())
-        return loss_change
+        loss_detail = 5*self.compare(self.detail(res), self.detail(data[2].cuda()))
+        Style_loss = 0.01/(4*math.pow(data[2].shape[1], 2))\
+                    * self.transposed_mul(self.detail(res), self.detail(data[2].cuda()))
+        return loss_change + loss_detail
 
 # train the network
 def trainCN(opt):

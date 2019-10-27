@@ -10,9 +10,22 @@ from torchvision import models
 # The VGG19_bn style generator presented in the paper.
 # As two layer features could be extracted continuely, the model is divided into two continuous parts.
 # (start-conv3_1; conv3_2-conv4_1) to enhance performance.
+class conv1_1(nn.Module):
+    def __init__(self, requires_grad=False):
+        super(conv1_1, self).__init__()
+        self.features = nn.Sequential(nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1))
+        self.features.load_state_dict(torch.load('../weights/vgg19_conv1_1.pth'))
+        if not requires_grad:
+            for param in self.parameters():
+                param.requires_grad = False
+        self.relu = nn.ReLU()
+        self.features.eval()
+        
+    def forward(self, x):
+        return self.relu(self.features(x))
 
 class myVGG(nn.Module):
-    def __init__(self, requires_grad=False, layers=None, BN=False):
+    def __init__(self, requires_grad=False, layers=['conv1_1'], BN=False):
         super(myVGG, self).__init__()
 
         if BN:
@@ -39,6 +52,7 @@ class myVGG(nn.Module):
         if requires_grad == False:
             for param in self.parameters():
                 param.requires_grad = False
+        #torch.save(self.features[0].state_dict(), '../weights/vgg19_conv1_1.pth')
 
     # seperate sequensial model into parts.
     def CreateCheckPoint(self):

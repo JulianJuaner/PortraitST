@@ -165,8 +165,8 @@ class CN_dataset(data.Dataset):
         #print(filename)
         src = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
         src = cv2.resize(src, (512, 512))
-        if mode == 'blur':
-            src = cv2.GaussianBlur(src,(3,3),0)
+        #if mode == 'blur':
+        #    src = cv2.GaussianBlur(src,(3,3),0)
         img = Image.fromarray(src)
 
         tensor = self.trans(img)
