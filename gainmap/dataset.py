@@ -142,7 +142,7 @@ class CN_dataset(data.Dataset):
 
     def __getitem__(self, index):
         if 'train' in self.name:
-            seed = random.randint(0, self.length)
+            seed = random.randint(0, self.length - 1)
             target = self.target[seed]
             example = self.example[seed]
             target_resize = target.replace('target', 'target_resize')
@@ -162,10 +162,11 @@ class CN_dataset(data.Dataset):
                 ]
 
     def get_image(self, filename, mode = 'noblur'):
+        #print(filename)
         src = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
         src = cv2.resize(src, (512, 512))
         if mode == 'blur':
-            src = cv2.GaussianBlur(src,(7,7),0)
+            src = cv2.GaussianBlur(src,(3,3),0)
         img = Image.fromarray(src)
 
         tensor = self.trans(img)

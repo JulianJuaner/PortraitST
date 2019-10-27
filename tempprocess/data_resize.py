@@ -9,12 +9,12 @@ from dataset import make_dataset
 
 # Function: resize a dataset and save to another folder.
 def resize(root, num):
-    folderA = os.path.join(root, '0')
-    folderB = os.path.join(root, '1')
+    folderA = os.path.join(root, 'target')
+    folderB = os.path.join(root, 'example')
     folderA = make_dataset(folderA)
     folderB = make_dataset(folderB)
-    os.makedirs(os.path.join(root, '0_resize'), exist_ok=True)
-    os.makedirs(os.path.join(root, '1_resize'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'target_resize'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'example_resize'), exist_ok=True)
 
     for i in range(num):
         if i%100 == 0:
@@ -25,12 +25,12 @@ def resize(root, num):
         imgB = cv2.resize(imgB, (128, 128))
 
         cv2.imwrite(
-            "../gainmap/checkpoints/dataset/0_resize/%d.png"%(i),
+            folderA[i].replace('target', 'target_resize'),
             imgA
         )
         cv2.imwrite(
-            "../gainmap/checkpoints/dataset/1_resize/%d.png"%(i),
+            folderB[i].replace('example', 'example_resize'),
             imgB
         )
 
-resize('../gainmap/checkpoints/dataset', 1200)
+resize('../datasets/newset', 1200)

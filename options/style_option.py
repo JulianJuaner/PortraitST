@@ -12,14 +12,14 @@ class StyleOptions():
         
         # Dataset options
         parser.add_argument('--root', type=str, default='../datasets',      help='root path of test images')
-        parser.add_argument('--name', type=str, default='pairedStyle',         help='name of the dataset')
+        parser.add_argument('--name', type=str, default='newset',         help='name of the dataset')
         parser.add_argument('--outf', type=str, default='image',            help='name of the dataset')
         parser.add_argument('--zoom_up', type=int, default=4,               help='scale to zoom up')
         parser.add_argument('--patch_size', type=int, default=1,            help='the patch size to optimize')
     
         # Training options
         parser.add_argument('--inchannel', type=int, default=6,             help='number of inpur channel in the network')
-        parser.add_argument('--batch_size', type=int, default=1,            help='input batch size')
+        parser.add_argument('--batch_size', type=int, default=4,            help='input batch size')
         parser.add_argument('--lr', type=float, default=1,                  help='learning rate')
         parser.add_argument('--iter_show', type=int, default=10,            help='iters to show the midate results')
         parser.add_argument('--layers', type=str, default=partialLayer)
