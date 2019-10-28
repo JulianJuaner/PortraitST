@@ -9,16 +9,29 @@ import tensorboardX
 
 from tqdm import tqdm
 from VGG import myVGG
-from dataset import ST_dataset, RC_dataset, de_norm, decolor
+from dataset import ST_dataset, RC_dataset, de_norm, decolor, make_trans
 sys.path.insert(1, '../options')
+sys.path.insert(1, '../refs')
+from histogram_match import match_histograms
 from gainmap_option import FeatureOptions
 from torch.utils.data import DataLoader
 from torchvision.utils import make_grid, save_image
+from PIL import Image
 
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+DN = de_norm()
+Trans = make_trans()
+
+def histogramMatch(img, reference):
+    img = (img[0]).detach().cpu().numpy().transpose(1,2,0)
+    reference = (reference[0]).detach().cpu().numpy().transpose(1,2,0)
+    #img = (torch.clamp(255*DN(img[0]), 0, 255)).detach().cpu().numpy().transpose(1,2,0).astype('uint8')
+    matched = match_histograms(img, reference, multichannel=True)
+    #print('matched:', matched, img.shape, reference.shape)
+    return torch.from_numpy(matched.transpose(2,0,1)).unsqueeze(0).float().cuda()
 
 def window_stdev(X, window_size, kernel):
     X = F.pad(X, [window_size//2,window_size//2,window_size//2,window_size//2], mode='reflect')
@@ -51,7 +64,7 @@ class GaborWavelet(nn.Module):
         self.gabor = nn.Conv2d(1,96,kernel_size=winsize, bias=False)
         self.gabor.weight.data = gkern
         print('load weight:', gkern.shape)
-        self.wind = nn.Conv2d(1, 1,kernel_size=winsize, bias=False)
+        self.wind = nn.Conv2d(1, 1, kernel_size=winsize, bias=False)
         nn.init.constant_(self.wind.weight.data, 1.0/(winsize*winsize))
         for param in self.parameters():
             param.requires_grad = False
@@ -178,22 +191,30 @@ def StyleTransfer(opt):
     # Trigger of the gabor wavelet loss.
     if opt.gabor == True:
         Gabor = GaborWavelet().cuda()
-        Gabor_target = Gabor(decolor(DN(data[1][0].cuda()).unsqueeze(0))/255)
 
     print('start processing.')
     for epoch in range(opt.epoch):
         for k, data in enumerate(dataloader):
+            
             for imgs in range(0, modefactor):
 
                 if opt.optimode == 'dataset':
                     input_feats = model(data[imgs].cuda())
                     style_feats = model(data[2].cuda())
                     # Initialize the output.
-                    output = data[imgs].clonr().cuda()
+                    output = data[imgs].clone().cuda()
+                    output = torch.nn.Parameter(output, requires_grad=True)
                 else:
                     input_feats = model(data[1].cuda())
                     style_feats = model(data[0].cuda())
                     output = data[1].clone().cuda()
+                    output = torch.nn.Parameter(output, requires_grad=True)
+
+                    if opt.gabor == True:
+                        Gabor_target = Gabor(decolor(255*DN(data[1][0].cuda()).unsqueeze(0))/255)
+                        print('wow', Gabor_target)
+                        optimizer_Gabor = torch.optim.Adam([output], lr=1e-5)
+                        optimizer_Gabor.zero_grad()
 
                 Maps = []
                 for i in range(len(model.layers)):
@@ -212,7 +233,6 @@ def StyleTransfer(opt):
                 # Initialize the output.
                 #output = data[1].cuda()
                 #output.requires_grad = True
-                output = torch.nn.Parameter(output, requires_grad=True)
                 images += 1
                 # Set optimizer.
                 optimizer = torch.optim.LBFGS([output], lr=opt.lr)
@@ -228,26 +248,23 @@ def StyleTransfer(opt):
                         optimizer.zero_grad()
                         Loss_gain = 0
                         Loss_style = 0
+                        Loss_hist = 0
                         Loss = 0
                         for i in range(len(model.layers)):
                             loss_gain_item, loss_style_item = totalLoss.forward(style_feats[i], input_feats[i],
                                                                 Map=Maps[i], mode=model.layers[i])
                             Loss_gain += loss_gain_item
                             Loss_style += loss_style_item
-
-                        if opt.gabor == True:
-                            # decolorization
-                            Loss_gabor = totalLoss.compare(
-                                Gabor(decolor(DN(output[0]).unsqueeze(0))/255),
-                                Gabor_target)
-                            Loss_gain += Loss_gabor
-
+                            if 'conv4_1'in model.layers[i]:
+                                Loss_hist += 3*totalLoss.compare(input_feats[i], histogramMatch(input_feats[i], style_feats[i]))
                         # loss term
-                        Loss = Loss_gain + Loss_style
+                        Loss = Loss_gain + Loss_style + Loss_hist
+                        #print(Loss_gain, Loss_style, Loss_hist)
                         Loss.backward(retain_graph=True)
+
                         return Loss
 
-                    if iters%opt.iter_show == 0:
+                    if iters%opt.iter_show == 0 and iters != 0:
                         # record result pics.
                         temp_image = make_grid(torch.clamp(DN(output[0]).unsqueeze(0),0,1), nrow=opt.batch_size, padding=0, normalize=False)
                         train_writer.add_image('temp result', temp_image, iters+images*opt.iter)
@@ -265,8 +282,17 @@ def StyleTransfer(opt):
 
                     # Updates.
                     #Loss.backward(retain_graph=True)
+                    if opt.gabor == True:
+                        optimizer_Gabor.zero_grad()
+                        # decoloriation
+                        Loss_gabor = totalLoss.L1(
+                            Gabor(decolor(255*DN(output[0]).unsqueeze(0))/255),
+                            Gabor_target)
+                        #print(Loss_gabor)
+                        Loss_gabor.backward()
+                        optimizer_Gabor.step()
+
                     optimizer.step(closure)
-                    #optimizer.zero_grad()
                     pbar.update(1)
 
                 pbar.close()

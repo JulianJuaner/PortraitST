@@ -17,7 +17,7 @@ IMG_EXTENSIONS = [
 def decolor(input_):
     RGB2G = torch.FloatTensor([0.299, 0.587, 0.114]).view(1, -1, 1, 1)
     summation =  torch.sum(input_*RGB2G.cuda(), 1).unsqueeze(1)
-    #print(summation.shape, input_.shape)
+    #print(summation, input_.shape)
     return summation
     
 # denormalize
@@ -85,13 +85,13 @@ class ST_dataset(data.Dataset):
         if 'VGG' in self.mode:
             src = cv2.resize(src, (512, 512))
         else:
-            src = cv2.resize(src, (500, 660))
+            src = cv2.resize(src, (256, 336))
 
         img = Image.fromarray(src)
         #tensor = torch.from_numpy(img.transpose(2,0,1))
         tensor = self.trans(img)
         if 'input' in mode:
-            img = Variable(tensor, requires_grad=True)#, device='cuda')
+            img = Variable(tensor, requires_grad=False)#, device='cuda')
         elif 'style' in mode:
             img = Variable(tensor, requires_grad=False)
         return img
