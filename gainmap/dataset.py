@@ -13,7 +13,13 @@ IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
     '.png', '.PNG', '.bmp', '.BMP',
 ]
-
+# decolorization:
+def decolor(input_):
+    RGB2G = torch.FloatTensor([0.299, 0.587, 0.114]).view(1, -1, 1, 1)
+    summation =  torch.sum(input_*RGB2G.cuda(), 1).unsqueeze(1)
+    #print(summation.shape, input_.shape)
+    return summation
+    
 # denormalize
 def de_norm():
     invTrans = transforms.Compose([ transforms.Normalize(mean = [ 0., 0., 0. ],
@@ -79,7 +85,7 @@ class ST_dataset(data.Dataset):
         if 'VGG' in self.mode:
             src = cv2.resize(src, (512, 512))
         else:
-            src = cv2.resize(src, (256, 336))
+            src = cv2.resize(src, (500, 660))
 
         img = Image.fromarray(src)
         #tensor = torch.from_numpy(img.transpose(2,0,1))

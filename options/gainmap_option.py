@@ -13,10 +13,11 @@ class FeatureOptions():
         # Dataset options
         parser.add_argument('--root', type=str, default='../datasets',      help='root path of test images')
         parser.add_argument('--name', type=str, default='gaintest',         help='name of the dataset')
-        parser.add_argument('--outf', type=str, default='image',        help='name of the dataset')
+        parser.add_argument('--outf', type=str, default='nbn_gabor',        help='name of the dataset')
         parser.add_argument('--max_size', type=tuple, default=(1024, 1024), help='the maximum size of test images')
 
         # Training options
+        # optmode: image: traditional transfer; feature: feature optimizer; dataset: Gatys' approach.
         parser.add_argument('--optimode', type=str, default='image',      help='optimization mode (image or feature)')
         parser.add_argument('--batch_size', type=int, default=1,            help='input batch size')
         parser.add_argument('--lr', type=float, default=1,                  help='learning rate')
@@ -24,6 +25,7 @@ class FeatureOptions():
         parser.add_argument('--layers', type=str, default=partialLayer)
         parser.add_argument('--epoch', type=int, default=1)
         parser.add_argument('--start', type=int, default=30)
+        parser.add_argument('--gabor', type=bool, default=True)
 
         # Weight parameters
         parser.add_argument('--alpha_3', type=float, default=0.5,           help='layer preference of conv3 first term')

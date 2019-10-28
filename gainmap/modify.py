@@ -9,18 +9,70 @@ import tensorboardX
 
 from tqdm import tqdm
 from VGG import myVGG
-from dataset import ST_dataset, RC_dataset, de_norm
+from dataset import ST_dataset, RC_dataset, de_norm, decolor
 sys.path.insert(1, '../options')
 from gainmap_option import FeatureOptions
 from torch.utils.data import DataLoader
 from torchvision.utils import make_grid, save_image
 
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
+
+
+def window_stdev(X, window_size, kernel):
+    X = F.pad(X, [window_size//2,window_size//2,window_size//2,window_size//2], mode='reflect')
+    c1 = F.conv2d(X, kernel)
+    c2 = F.conv2d(torch.pow(X,2), kernel)
+    t = c2 - c1*c1
+    return torch.sqrt(torch.clamp_min_(t,0))
+
+def GaborFilter(img, gkernel):
+    winsize = gkernel.shape[2]
+    #input = torch.from_numpy(img).unsqueeze(0).unsqueeze(0).cuda()
+    input = img#.cuda()
+    weight = torch.from_numpy(gkernel).unsqueeze(1).float().cuda()
+    kernel = (torch.ones((1,1,winsize,winsize)).float() / (winsize * winsize)).cuda()
+    gaborfeats = F.conv2d(F.pad(input, [winsize//2,winsize//2,winsize//2,winsize//2], mode='reflect'),weight)
+    gaborfeats = gaborfeats.reshape(48,2,gaborfeats.shape[2],gaborfeats.shape[3])
+    tmp = torch.sqrt(torch.sum(torch.pow(gaborfeats, 2), 1, keepdim=True))
+    mean = F.conv2d(F.pad(tmp, [winsize//2,winsize//2,winsize//2,winsize//2], mode='reflect'), kernel)
+    stddev = window_stdev(tmp, winsize, kernel)
+    return torch.cat((mean, stddev), 0)#.cpu()#.numpy()
+
+class GaborWavelet(nn.Module):
+    def __init__(self, gkern=None, winsize=13):
+        super(GaborWavelet, self).__init__()
+        if gkern is None:
+            gkern = torch.from_numpy(np.load("../weights/kernel2.npy")).float().unsqueeze(1)
+            winsize = gkern.shape[2]
+        self.pad = nn.ReflectionPad2d(winsize//2)
+        # self.gabor = nn.Conv2d(1,96,kernel_size=winsize, padding=winsize//2, padding_mode='reflect', bias=False)
+        self.gabor = nn.Conv2d(1,96,kernel_size=winsize, bias=False)
+        self.gabor.weight.data = gkern
+        print('load weight:', gkern.shape)
+        self.wind = nn.Conv2d(1, 1,kernel_size=winsize, bias=False)
+        nn.init.constant_(self.wind.weight.data, 1.0/(winsize*winsize))
+        for param in self.parameters():
+            param.requires_grad = False
+
+    def forward(self, x):
+        feats = self.gabor(self.pad(x))
+        feats = feats.reshape(-1, 2, feats.shape[2], feats.shape[3])
+        tmp = torch.sqrt(torch.sum(torch.pow(feats, 2), 1, keepdim=True))
+        mean = self.wind(self.pad(tmp)).reshape(-1,48,feats.shape[2], feats.shape[3])
+        stddev = torch.sqrt(torch.clamp(self.wind(self.pad(torch.pow(tmp,2)))-torch.pow(self.wind(self.pad(tmp)),2),min=0)).reshape(-1,48,feats.shape[2], feats.shape[3])
+        return torch.cat((mean, stddev), 1)
+
 def ModifyMap(Style, Input, opt):
     Gain = torch.div(Style, Input+1e-4)
     Gain = torch.clamp(Gain, min=opt.gmin, max=opt.gmax)
     Modified = Input*Gain
+
+    # for the Gaty's implementation, return the input feature as gainmap.
     if opt.optimode == 'dataset':
         return Input
+
     return Modified
 
 class FeatureMap(torch.nn.Module):
@@ -47,6 +99,7 @@ class OverAllLoss():
         self.gmin = opt.gmin
         self.gmax = opt.gmax
         self.sigma = 1e-4
+        self.opt = opt
 
     # get the style representation.
     def transposed_mul(self, Input, Style):
@@ -122,6 +175,11 @@ def StyleTransfer(opt):
 
     images = -1
 
+    # Trigger of the gabor wavelet loss.
+    if opt.gabor == True:
+        Gabor = GaborWavelet().cuda()
+        Gabor_target = Gabor(decolor(DN(data[1][0].cuda()).unsqueeze(0))/255)
+
     print('start processing.')
     for epoch in range(opt.epoch):
         for k, data in enumerate(dataloader):
@@ -131,11 +189,11 @@ def StyleTransfer(opt):
                     input_feats = model(data[imgs].cuda())
                     style_feats = model(data[2].cuda())
                     # Initialize the output.
-                    output = data[imgs].cuda()
+                    output = data[imgs].clonr().cuda()
                 else:
                     input_feats = model(data[1].cuda())
                     style_feats = model(data[0].cuda())
-                    output = data[1].cuda()
+                    output = data[1].clone().cuda()
 
                 Maps = []
                 for i in range(len(model.layers)):
@@ -176,6 +234,14 @@ def StyleTransfer(opt):
                                                                 Map=Maps[i], mode=model.layers[i])
                             Loss_gain += loss_gain_item
                             Loss_style += loss_style_item
+
+                        if opt.gabor == True:
+                            # decolorization
+                            Loss_gabor = totalLoss.compare(
+                                Gabor(decolor(DN(output[0]).unsqueeze(0))/255),
+                                Gabor_target)
+                            Loss_gain += Loss_gabor
+
                         # loss term
                         Loss = Loss_gain + Loss_style
                         Loss.backward(retain_graph=True)
