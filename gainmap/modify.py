@@ -255,8 +255,8 @@ def StyleTransfer(opt):
                                                                 Map=Maps[i], mode=model.layers[i])
                             Loss_gain += loss_gain_item
                             Loss_style += loss_style_item
-                            if 'conv4_1'in model.layers[i]:
-                                Loss_hist += 3*totalLoss.compare(input_feats[i], histogramMatch(input_feats[i], style_feats[i]))
+                            #if 'conv4_1' in model.layers[i]: #or 'conv1_1' in model.layers[i]:
+                            #    Loss_hist += 3*totalLoss.compare(input_feats[i], histogramMatch(input_feats[i], style_feats[i]))
                         # loss term
                         Loss = Loss_gain + Loss_style + Loss_hist
                         #print(Loss_gain, Loss_style, Loss_hist)
