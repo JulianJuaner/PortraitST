@@ -70,7 +70,7 @@ class ST_dataset(data.Dataset):
     def __getitem__(self, index):
         if 'paired' in self.mode:
             return [self.get_image(self.feat[index%len(self)], mode='style'),
-             self.get_image(self.input[index%1], mode='input')]
+             self.get_image(self.input[index%len(self)], mode='input')]
         else:
             return [self.get_image(self.feat[0], mode='style'),
              self.get_image(self.input[index%len(self)], mode='input')]

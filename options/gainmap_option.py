@@ -12,8 +12,8 @@ class FeatureOptions():
         
         # Dataset options
         parser.add_argument('--root', type=str, default='../datasets',      help='root path of test images')
-        parser.add_argument('--name', type=str, default='gaintest',         help='name of the dataset')
-        parser.add_argument('--outf', type=str, default='image',        help='name of the dataset')
+        parser.add_argument('--name', type=str, default='keyframes',         help='name of the dataset')
+        parser.add_argument('--outf', type=str, default='keyframe',        help='name of the dataset')
         parser.add_argument('--max_size', type=tuple, default=(1024, 1024), help='the maximum size of test images')
 
         # Training options

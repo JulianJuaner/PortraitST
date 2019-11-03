@@ -32,5 +32,15 @@ def resize(root, num):
             folderB[i].replace('example', 'example_resize'),
             imgB
         )
-
-resize('../datasets/newset', 1200)
+def guideImage(filename):
+    img = cv2.imread(filename)
+    size1 = (256, 336)
+    size2 = (1614, 2119)
+    img = cv2.resize(img, size1)
+    img = cv2.resize(img, size2)
+    cv2.imwrite(
+            'guideimage2.png',
+            img
+    )
+guideImage('guideimage2.png')
+#resize('../datasets/newset', 1200)
