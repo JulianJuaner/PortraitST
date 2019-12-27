@@ -1,0 +1,14 @@
+python3 alignment.py -i ../datasets/flickr2_imgs/2239739044_c8e129a57e_o.png -e ../datasets/painting/1.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/2239739044_c8e129a57e_o.png -e ../datasets/painting/2.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/2239739044_c8e129a57e_o.png -e ../datasets/painting/3.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/2239739044_c8e129a57e_o.png -e ../datasets/painting/4.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/2239739044_c8e129a57e_o.png -e ../datasets/painting/5.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/2239739044_c8e129a57e_o.png -e ../datasets/painting/6.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/2239739044_c8e129a57e_o.png -e ../datasets/painting/7.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/4583418416_290d7e40a4_o.png -e ../datasets/painting/1.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/4583418416_290d7e40a4_o.png -e ../datasets/painting/2.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/4583418416_290d7e40a4_o.png -e ../datasets/painting/3.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/4583418416_290d7e40a4_o.png -e ../datasets/painting/4.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/4583418416_290d7e40a4_o.png -e ../datasets/painting/5.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/4583418416_290d7e40a4_o.png -e ../datasets/painting/6.jpg
+python3 alignment.py -i ../datasets/flickr2_imgs/4583418416_290d7e40a4_o.png -e ../datasets/painting/7.jpg
