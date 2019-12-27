@@ -1,6 +1,9 @@
 from __future__ import print_function
 import torch.utils.data as data
 import os
+import sys
+sys.path.insert(1, '../alignment')
+from alignment import align
 import torch
 import random
 import numpy as np
@@ -66,11 +69,18 @@ class ST_dataset(data.Dataset):
         self.mode = mode
         self.name = name
         self.trans = make_trans()
+        if 'no_align' in self.mode:
+            align(self.input, self.feat)
+        print(len(self))
 
     def __getitem__(self, index):
         if 'paired' in self.mode:
             return [self.get_image(self.feat[index%len(self)], mode='style'),
              self.get_image(self.input[index%len(self)], mode='input')]
+        elif 'no_align' in self.mode:
+            print('no_align')
+            return [self.get_image(self.feat[index%len(self)].replace('style', 'align'), mode='style'),
+             self.get_image(self.input[index%len(self.input)], mode='input')]
         else:
             return [self.get_image(self.feat[index%len(self)], mode='style'),
              self.get_image(self.input[0], mode='input')]
@@ -85,7 +95,9 @@ class ST_dataset(data.Dataset):
         if 'VGG' in self.mode:
             src = cv2.resize(src, (512, 512))
         else:
-            src = cv2.resize(src, (256, 336))
+            size = (256, round(src.shape[0]/src.shape[1]*256/16)*16)
+            print(size, filename)
+            src = cv2.resize(src, size)
 
         img = Image.fromarray(src)
         #tensor = torch.from_numpy(img.transpose(2,0,1))

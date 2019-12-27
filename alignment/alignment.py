@@ -127,8 +127,11 @@ def load_image_and_morph(args):
     input_images_number, example_images_number = 1,1
 
     t3 = time.time()
-    imageI = cv2.resize(imageI, (500, 650))
-    imageE = cv2.resize(imageE, (500, 650))
+
+    suitable_size = (500, imageI.shape[0]/imageO.shape[1]*500)
+
+    imageI = cv2.resize(imageI, suitable_size)
+    imageE = cv2.resize(imageE, suitable_size)
     pointsI = face_and_landmark_detect(imageI, face_detector, landmark_predictor_68, landmark_predictor_81, args.input_image.split('/')[-1], 1)
     pointsE = face_and_landmark_detect(imageE, face_detector, landmark_predictor_68, landmark_predictor_81, args.example_image.split('/')[-1], 1)
 
@@ -137,7 +140,7 @@ def load_image_and_morph(args):
     # imageI = imageI[targetI[0]:targetI[1], targetI[2]:targetI[3]]
     imageE = imageE[targetE[0]:targetE[1], targetE[2]:targetE[3]]
 
-    imageE = cv2.resize(imageE, (500, 650))
+    imageE = cv2.resize(imageE, suitable_size)
     #cv2.imwrite('./tmp/delete/noncrop_'+args.input_image.split('/')[-1]+'.png', imageI)
     #cv2.imwrite('./tmp/delete/crop_'+args.example_image.split('/')[-1]+'.png', imageE)
 
@@ -174,6 +177,45 @@ def get_filelist(dirpath):
                 file_list.append(fname)
     return file_list
 
+def align(inputs, style):
+    # initialize dlib's face detector and use facial landmark predictor
+    face_detector = dlib.get_frontal_face_detector()
+    landmark_predictor_68 = dlib.shape_predictor('../weights/shape_predictor_68_face_landmarks.dat')
+    landmark_predictor_81 = dlib.shape_predictor('../weights/shape_predictor_81_face_landmarks.dat')
+    # load the image
+    for index in range(0, len(style)):
+        imageI = cv2.imread(inputs[0])
+        imageE = cv2.imread(style[index])
+        suitable_size = (512, round(imageI.shape[0]/imageI.shape[1]*512))
+        half = (256, round(imageI.shape[0]/imageI.shape[1]*256))
+        imageI = cv2.resize(imageI, suitable_size)
+        imageE = cv2.resize(imageE, suitable_size)
+        pointsI = face_and_landmark_detect(imageI, face_detector, landmark_predictor_68, landmark_predictor_81, inputs[0].split('/')[-1], 1)
+        pointsE = face_and_landmark_detect(imageE, face_detector, landmark_predictor_68, landmark_predictor_81, style[index].split('/')[-1], 1)
+
+        # targetI = crop_image(imageI, face_detector, pointsI)
+        targetE = crop_image(imageI, imageE, face_detector, pointsI, pointsE)
+        # imageI = imageI[targetI[0]:targetI[1], targetI[2]:targetI[3]]
+        imageE = imageE[targetE[0]:targetE[1], targetE[2]:targetE[3]]
+
+        imageE = cv2.resize(imageE, suitable_size)
+
+        pointsI = face_and_landmark_detect(imageI, face_detector, landmark_predictor_68, landmark_predictor_81, inputs[0].split('/')[-1], 1)
+        pointsE = face_and_landmark_detect(imageE, face_detector, landmark_predictor_68, landmark_predictor_81, style[index].split('/')[-1], 1)
+        imageI_triangle_list = get_triangle_and_index(pointsI, imageI, inputs[0].split('/')[-1])
+
+        # ------------------------------------------------------------------------------------
+        # morphing
+        # initialize the final morphing image
+        image_morph = np.zeros(imageE.shape, dtype = imageE.dtype)
+
+        for i in range(imageI_triangle_list.shape[0]):
+            triangleI = [tuple(pointsI[imageI_triangle_list[i, 0]]), tuple(pointsI[imageI_triangle_list[i, 1]]), tuple(pointsI[imageI_triangle_list[i, 2]])]
+            triangleE = [tuple(pointsE[imageI_triangle_list[i, 0]]), tuple(pointsE[imageI_triangle_list[i, 1]]), tuple(pointsE[imageI_triangle_list[i, 2]])]
+            morph.morphTriangle(imageI, imageE, image_morph, triangleI, triangleE)
+
+        cv2.imwrite('../test/align/'+style[index].split('/')[-1], image_morph)
+    return True
 
 # The main function of aligment.
 # METHOD: Facial landmarks + morphing + SIFT flow

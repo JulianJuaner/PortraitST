@@ -1,7 +1,7 @@
 import argparse
 import os
 
-class FeatureOptions():
+class TestOptions():
     def __init__(self, parser):
         self.initialized = False
 
@@ -11,10 +11,8 @@ class FeatureOptions():
         partialLayer = 'conv1_1,conv2_1,conv3_1,conv4_1,conv5_1'
         
         # Dataset options
-        parser.add_argument('--root', type=str, default='',         help='name of the dataset')
-        parser.add_argument('--name', type=str, default='../test',         help='name of the dataset')
-        parser.add_argument('--outf', type=str, default='../test/result',        help='name of the dataset')
-        #parser.add_argument('--outf', type=str, default='finalm_G',        help='name of the dataset')
+        parser.add_argument('--name', type=str, default='./test',         help='name of the dataset')
+        parser.add_argument('--outf', type=str, default='./test/result',        help='name of the dataset')
         parser.add_argument('--max_size', type=tuple, default=(1024, 1024), help='the maximum size of test images')
 
         # Training options

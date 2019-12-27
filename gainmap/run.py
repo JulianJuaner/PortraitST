@@ -29,7 +29,7 @@ def modifedStyleTransfer(opt):
     train_writer = tensorboardX.SummaryWriter("./log/%s/"%opt.outf)
 
     dataloader = DataLoader(
-            ST_dataset(root=opt.root, name=opt.name, mode='paired'),
+            ST_dataset(root=opt.root, name=opt.name, mode='no_align'),
             batch_size=opt.batch_size, 
             shuffle=False,
             num_workers=0,
