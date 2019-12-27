@@ -224,22 +224,14 @@ if __name__ == '__main__':
     # print('There is the main function of alignment part')
     arg = argparse.ArgumentParser()
     # arg.add_argument("-p", "--shape_predictor", required=True, help="path to facial landmark predictor")
-    arg.add_argument("-i", "--input_image", help="path to image")
-    arg.add_argument("-e", "--example_image",help="path to example image")
-    arg.add_argument("-id", "--input_dir",  default="./input_dir")
-    arg.add_argument("-ed", "--example_dir",  default="./example_dir")
+    arg.add_argument("-i", "--input_image", required=True, help="path to image")
+    arg.add_argument("-e", "--example_image", required=True, help="path to example image")
+    arg.add_argument("-id", "--input_dir", required=False, help="path to image directory")
+    arg.add_argument("-ed", "--example_dir", required=False, help="path to example image directory")
     args = arg.parse_args()
 
-    # input_list = []
-    # example_list = []
-    # input_list = get_filelist(args.input_dir)
-    # example_list = get_filelist(args.example_dir)
-    # for i in input_list:
-    #     for j in example_list:
-    #         args.input_image = i
-    #         args.example_image = j
-    #         input_images_number, example_images_number = load_image_and_morph(args)
     input_images_number, example_images_number = load_image_and_morph(args)
+
     end = time.time()
     # statistic
     print('Complete with {} input_images and {} example_images in {}s'.format(1, 1, round(end-start, 2)))
