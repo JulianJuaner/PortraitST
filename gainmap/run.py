@@ -46,7 +46,7 @@ def modifedStyleTransfer(opt):
         Maps.mapload(input_feats, style_feats, len(model.VGG.layers))
         #FeatureMaps = FeatureMap(opt)
         #FeatureMaps.mapload(input_feats, style_feats, len(model.VGG.layers))
-        Maplist = input_feats_copy # FeatureMaps.featureList
+        Maplist = Maps.featureList
 
         out = model.net_forward(Maplist)
         temp_image = make_grid(torch.clamp(DN(out[0]).unsqueeze(0), 0, 1), nrow=1, padding=0, normalize=False)
@@ -84,7 +84,6 @@ def modifedStyleTransfer(opt):
         pbar = tqdm(total=total_iter)
 
         for iters in range(total_iter):
-            print(iters)
             def closure():
                 input_feats = model.VGG(output)
                 optimizer.zero_grad()
@@ -111,7 +110,7 @@ def modifedStyleTransfer(opt):
                     temp_image = make_grid(torch.clamp(DN(output[0]).unsqueeze(0),0,1), nrow=opt.batch_size, padding=0, normalize=False)
                     train_writer.add_image('temp result', temp_image, iters+images*opt.iter)
 
-                if iters%(10) == 0:
+                if iters%(opt.iter_show) == 0:
                     save_image(temp_image, "../test/result/%d_%d.png"%(k, iters))
             else:
                 optimizer.zero_grad()

@@ -35,9 +35,9 @@ class FeatureOptions():
         parser.add_argument('--beta_4', type=float, default=2,            help='layer preference of conv4 second term')
 
         parser.add_argument('--iter', type=int, default=20,                 help='iterations of feed-forward and back-propagation')
-        parser.add_argument('--gmin', type=float, default=0.3,              help='lower bound clamp gain map')
-        parser.add_argument('--gmax', type=float, default=10,              help='upper bound clamp gain map')
-        parser.add_argument('--gT', type=float, default=1e-5,               help='balance two terms in the total loss')
+        parser.add_argument('--gmin', type=float, default=0.7,              help='lower bound clamp gain map')
+        parser.add_argument('--gmax', type=float, default=5,              help='upper bound clamp gain map')
+        parser.add_argument('--gT', type=float, default=5e-6,               help='balance two terms in the total loss')
         #best modify: 1e-5
         self.initialized = True
         return parser
