@@ -1,9 +1,7 @@
 
 *.pth
-*.png
-*.jpg
-*.jpeg
 *.out*
+datasets*
 *.pyc
 *.dat
 *.zip
@@ -11,5 +9,4 @@
 *.html
 *SIFT*
 *filepart*
-*ref*
 *.vscode

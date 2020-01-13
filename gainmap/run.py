@@ -22,7 +22,7 @@ from recon import VGGRC
 def modifedStyleTransfer(opt):
     print('loading VGG models......')
     model = VGGRC(opt).cuda()
-    model.load_state_dict(torch.load('checkpoints/rec/%s/model_%d.pth' % ('VGGRC_style', opt.start)))
+    model.load_state_dict(torch.load('../weight/model_%d.pth' % (opt.start)))
     DN = de_norm()
     os.makedirs("./log/%s/"%opt.outf, exist_ok=True)
     os.makedirs("./checkpoints/%s/"%opt.outf, exist_ok=True)

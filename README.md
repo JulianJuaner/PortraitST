@@ -1,5 +1,26 @@
 # PortraitST
-ESTR4998 Final Year Project. A portrait style transfer based on neural network.
+ESTR4998 Final Year Project. This is a head portrait style transfer based on VGG19 neural network feature.
+
+## How to use it?
+#### Step1: Install all following required packages:
+
+tensorboardX
+pytorch(GPU)
+dlib
+numpy
+opencv-python
+pillow
+
+#### Step2: Download weights.
+Download weights from this link:
+then put them under the *./weight* directory.
+
+#### Step3: Upload style and input images.
+The program was designed only for one input with multiple styles. You can put your input image into the *./test/input* folder, put your style references (it should have a clear face which could be regonized by dlib face detector) into the *./test/style* directory.
+
+#### Step4: Run it.
+goto the /gainmap directory, run *run.py* and get result from *./test/result* as well as alignment result from *./test/align*.
+
 
 ## Daliy Report
 
@@ -45,5 +66,11 @@ Facial detection crop. Experiments around different set of parameters to balance
 ### 20191024
 Happy progammer's day!\
 Coordinate Network is uner construction.\
-Traditional StyLit is needed.\
+Traditional StyLit is needed.
+
+### 20200113
+The first part pipeline completed!\
+Before that, we try to use stylit algorithm to get the detailed high frequency features. Also, we use the texture synthesis method to get the stylized video result.
+
+
 
