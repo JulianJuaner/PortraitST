@@ -84,7 +84,7 @@ def modifedStyleTransfer(opt):
         pbar = tqdm(total=total_iter)
 
         for iters in range(total_iter):
-            
+            print(iters)
             def closure():
                 input_feats = model.VGG(output)
                 optimizer.zero_grad()
@@ -112,7 +112,7 @@ def modifedStyleTransfer(opt):
                     train_writer.add_image('temp result', temp_image, iters+images*opt.iter)
 
                 if iters%(10) == 0:
-                    save_image(temp_image, "./checkpoints/%s/%d_%d.png"%(opt.outf, k, iters))
+                    save_image(temp_image, "../test/result/%d_%d.png"%(k, iters))
             else:
                 optimizer.zero_grad()
                 input_feats = Maplist
@@ -140,7 +140,7 @@ def modifedStyleTransfer(opt):
                     save_image(temp_image, "./checkpoints/%s/%d_%d.png"%(opt.outf, k, iters))
 
             #optimizer.zero_grad()
-            #pbar.update(1)
+            pbar.update(1)
 
         pbar.close()
 

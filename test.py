@@ -8,12 +8,10 @@ sys.path.insert(1, './options')
 
 from dataset import *
 from modify import *
-from gainmap_option import TestOptions
+from test_option import TestOptions
 from alignment import load_image_and_morph
 
 parser = argparse.ArgumentParser()
 OptionInit = TestOptions(parser)
 
-load_image_and_morph()
-
-
+load_image_and_morph() 
