@@ -1,18 +1,26 @@
 # PortraitST
+![](refs/005.jpg)
 ESTR4998 Final Year Project. This is a head portrait style transfer based on VGG19 neural network feature.
 
+![](refs/overall.png)\
+The overall process (we disabled the histogram match in the current version)
+![](refs/encoder.png)\
+The VGG decoder structure.
+
+
+[report here](ref/report.pdf)
 ## How to use it?
 #### Step1: Install all following required packages:
 
-tensorboardX
-pytorch(GPU)
-dlib
-numpy
-opencv-python
+tensorboardX\
+pytorch(GPU)\
+dlib\
+numpy\
+opencv-python\
 pillow
 
 #### Step2: Download weights.
-Download weights from this link:
+Download weights from this [link](https://mycuhk-my.sharepoint.com/:f:/r/personal/1155091988_link_cuhk_edu_hk/Documents/weights%20for%20PortraiST?csf=1&e=97hHrw),
 then put them under the *./weight* directory.
 
 #### Step3: Upload style and input images.
@@ -21,6 +29,9 @@ The program was designed only for one input with multiple styles. You can put yo
 #### Step4: Run it.
 goto the /gainmap directory, run *run.py* and get result from *./test/result* as well as alignment result from *./test/align*.
 
+#### Some tips:
+1. this program can only test for front face and please make sure the portrait is the main part of the input image.
+2. There must be many bugs and low efficiency implementation details in this baby project... 
 
 ## Daliy Report
 
