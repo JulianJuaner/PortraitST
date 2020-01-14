@@ -8,7 +8,7 @@ The overall process (we disabled the histogram match in the current version)
 The VGG decoder structure.
 
 
-[report here](ref/report.pdf)
+[report here](refs/report.pdf)
 ## How to use it?
 #### Step1: Install all following required packages:
 
