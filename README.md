@@ -20,7 +20,7 @@ opencv-python\
 pillow
 
 #### Step2: Download weights.
-Download weights from this [link](https://mycuhk-my.sharepoint.com/:f:/r/personal/1155091988_link_cuhk_edu_hk/Documents/weights%20for%20PortraiST?csf=1&e=97hHrw),
+Download weights from this [link](https://mycuhk-my.sharepoint.com/:f:/g/personal/1155091988_link_cuhk_edu_hk/EoedXjHZWJVMka-1bNu2VT0B-pI8BadgPHXXLGdnyd5WqA?e=CU881J),
 then put them under the *./weight* directory.
 
 #### Step3: Upload style and input images.

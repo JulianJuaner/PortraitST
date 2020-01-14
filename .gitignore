@@ -9,4 +9,4 @@ datasets*
 *.html
 *SIFT*
 *filepart*
-*.vscode
+*.json*
